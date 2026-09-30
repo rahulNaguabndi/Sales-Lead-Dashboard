@@ -1,5 +1,27 @@
 # Driving the Build with GitHub Spec Kit + Claude Code
 
+## ⚡ Autonomous Mode (recommended): start it and walk away
+Two project skills and a PowerShell orchestrator automate everything described in the manual sections below:
+- `.claude/skills/build-feature`: takes one feature through specify → self-answered clarify → plan → tasks → analyze → implement → verify → `REPORT.md` → commit. It never asks questions.
+- `.claude/skills/integrate-wave`: merges a wave's branches into `main`, resolves conflicts by the ownership rules, runs all checks, verifies the wave gate, and tags `wave-N-done`.
+- `scripts/speckit/run-waves.ps1`: for each wave, creates one git worktree per feature (`..\ld-worktrees\Fxx`), runs parallel headless `claude -p` sessions (each with its own `PORT` and Redis DB), waits, integrates, and **stops if a gate fails**.
+- `scripts/speckit/status.ps1`: a live progress table (`-Watch`) you can run from any terminal.
+
+```powershell
+# in a dedicated terminal (keep it open; closing it stops the jobs)
+.\scripts\speckit\run-waves.ps1 -Set mvp          # today's demo scope: F01 → F02,F03,F09,F13 → F04,F05,F06,F10 → F12
+.\scripts\speckit\run-waves.ps1 -FromWave 3       # later: the rest of the full set (F20 is excluded until caching is decided)
+# in any other terminal
+.\scripts\speckit\status.ps1 -Watch
+```
+Useful flags: `-DryRun` (print the plan) · `-MaxParallel 3` · `-BudgetUsd 25` (per session, doubled for F01) · `-TimeoutMinutes 180` · `-Only F04,F05` · `-SpecOnly -AllWavesAtOnce` (specs for every feature in parallel, no code) · `-SkipIntegrate` · `-KeepWorktrees` · `-PermissionMode auto|acceptEdits|dontAsk|bypassPermissions`.
+
+It's safe to re-run: finished (DONE) features are skipped, and existing branches and worktrees are reused. Results live in `specs/NNN-*/REPORT.md`, `docs/speckit/runs/wave-N.md`, and logs in `..\ld-worktrees\logs\`.
+The constitution is already installed in `.specify/memory/constitution.md`, so you don't need to run `/speckit-constitution` manually.
+
+---
+The manual process follows. It's useful for understanding the steps or driving a single feature by hand.
+
 The strategy: **specs are written sequentially, implementation runs in parallel by wave.**
 Writing specs, plans and tasks is cheap and touches only docs. Doing it in one session keeps Spec Kit's feature numbering and branches clean. Implementation is the expensive part, so that's what gets split across parallel Claude sessions in git worktrees.
 
