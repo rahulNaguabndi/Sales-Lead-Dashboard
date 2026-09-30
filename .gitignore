@@ -13,3 +13,8 @@ data/*.db-*
 .DS_Store
 .vscode/
 .idea/
+*.db-wal
+*.db-shm
+*.tsbuildinfo
+next-env.d.ts
+.env*.local
