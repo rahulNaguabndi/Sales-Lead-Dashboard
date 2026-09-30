@@ -109,6 +109,7 @@ test('UI: log a call from the lead page, reload, entry is still there', async ({
 
   const lead = sofiaLead();
   const response = await page.goto(`/leads/${lead.id}`);
+  await page.waitForLoadState('networkidle'); // clicks before hydration are dropped
   const composer = page.getByRole('button', { name: 'Log an activity…' });
   test.skip(
     !response?.ok() || !(await composer.isVisible({ timeout: 5000 }).catch(() => false)),
