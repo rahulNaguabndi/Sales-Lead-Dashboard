@@ -1,16 +1,30 @@
-import { VEHICLE_SLUGS } from '@leaddesk/shared';
+import { Link, Route, Routes } from 'react-router-dom';
+import { DemoToolbar } from './components/demo/DemoToolbar';
+import { EnquirySheet } from './components/enquiry/EnquirySheet';
+import { Home } from './pages/Home';
+import { ModelDetail } from './pages/ModelDetail';
+import { NotFound } from './pages/NotFound';
+import { ThankYou } from './pages/ThankYou';
+import { EnquiryProvider } from './state';
 
-// Placeholder: F13 owns src/** after this scaffold.
 export function App() {
   return (
-    <div
-      style={{ minHeight: '100vh', display: 'grid', placeItems: 'center', fontFamily: 'system-ui' }}
-    >
-      <div style={{ textAlign: 'center' }}>
-        <h1>EuroDrive Showroom</h1>
-        <p>Lead submission form coming soon (F13).</p>
-        <p>{VEHICLE_SLUGS.length} models available.</p>
-      </div>
-    </div>
+    <EnquiryProvider>
+      <DemoToolbar />
+      <header className="site-header">
+        <Link to="/" className="brand">
+          EuroDrive Motors
+        </Link>
+      </header>
+      <main>
+        <Routes>
+          <Route path="/" element={<Home />} />
+          <Route path="/models/:slug" element={<ModelDetail />} />
+          <Route path="/thank-you" element={<ThankYou />} />
+          <Route path="*" element={<NotFound />} />
+        </Routes>
+      </main>
+      <EnquirySheet />
+    </EnquiryProvider>
   );
 }
