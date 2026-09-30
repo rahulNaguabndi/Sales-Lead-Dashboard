@@ -16,3 +16,4 @@ export * from './channels';
 export * from './customer-timezone';
 export * from './templates';
 export * from './schemas/customer';
+export * from './offer-eligibility';

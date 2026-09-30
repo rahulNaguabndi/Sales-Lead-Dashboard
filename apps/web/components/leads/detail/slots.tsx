@@ -6,6 +6,7 @@ import { UpdatedByNote } from '@/components/live/UpdatedByNote';
 import { FollowUpCard } from '@/components/followups/followup-card';
 import { ChannelBar } from '@/components/leads/channels/ChannelBar';
 import { CustomerExtras } from '@/components/leads/customer/CustomerExtras';
+import { OffersPanel } from '@/components/offers/OffersPanel';
 
 export type LeadSlotName =
   | 'composer'
@@ -29,6 +30,9 @@ export const leadSlots: LeadSlots = {
   channels: ChannelBar as ComponentType<LeadSlotProps>,
   followUps: FollowUpCard as ComponentType<LeadSlotProps>,
   offers: null,
+  channels: null,
+  followUps: null,
+  offers: OffersPanel as ComponentType<LeadSlotProps>,
   ai: null,
   customerExtras: CustomerExtras as ComponentType<LeadSlotProps>,
   headerActions: LeadHeaderAssign as ComponentType<LeadSlotProps>,
