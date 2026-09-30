@@ -10,3 +10,7 @@ export * from './schemas/intake';
 export * from './schemas/activity';
 export * from './schemas/lead-filters';
 export * from './scoring';
+export * from './channels';
+export * from './customer-timezone';
+export * from './templates';
+export * from './schemas/customer';
