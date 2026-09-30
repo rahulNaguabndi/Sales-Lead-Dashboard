@@ -14,7 +14,7 @@ You run **headless, and nobody is watching**. Never ask the user a question and 
 1. Resolve the spec file `docs/features/Fxx-*.md`. Derive `NN` (the two digits of the ID), `NUM` = `0NN` (e.g. `004`), and `SLUG` = the file name without `Fxx-` and `.md` (e.g. `lead-inbox`).
 2. Read in full: `docs/features/Fxx-*.md`, `docs/features/README.md` (wave, dependencies, **owned paths**, ownership exceptions), `.specify/memory/constitution.md` (fall back to `docs/speckit/constitution.md`), `docs/03-domain-model.md`, and `docs/04-architecture.md`. Skim `docs/00-overview.md`, `01-personas.md`, and `02-user-flows.md`.
 3. Check that the dependencies listed in README are present on this branch (their code exists or `specs/0NN-*` exists). Same-wave soft dependencies are expected to be missing, so stub them as the README describes. If a **hard** dependency from an earlier wave is missing, write a BLOCKED report and stop.
-4. **Resume:** if `specs/0NN-*/tasks.md` already exists and was committed, skip steps 1–5 and continue at step 6. If `specs/0NN-*/REPORT.md` says `Status: DONE`, just print the final message and stop.
+4. **Resume:** if `specs/0NN-*/tasks.md` already exists and was committed, skip steps 1–5 and continue at step 6. In `spec-only` mode, just print `Fxx: SPECCED — already specified` and stop, without writing any files. If `specs/0NN-*/REPORT.md` says `Status: DONE`, just print the final message and stop.
 5. Environment: respect the `PORT`, `SHOWROOM_PORT`, `REDIS_URL`, and `DATABASE_URL` env vars if set. Other features are being built **in parallel** on this machine, so never hardcode ports 3000/3001 in scripts or tests, and never kill processes you didn't start.
 
 ## 1. Specify
