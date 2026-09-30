@@ -1,5 +1,6 @@
 'use client';
 
+import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useQuery } from '@tanstack/react-query';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -15,7 +16,28 @@ type Props = Pick<LeadSlotProps, 'lead'> & {
   onUseInMessage?: (offer: LeadOfferDTO['offer']) => void;
 };
 
-export function OffersPanel({ lead, onUseInMessage }: Props) {
+/**
+ * Client-only shell: the data hook mounts after hydration, so server rendering (and tests that
+ * render the slot without a QueryClientProvider) show the loading state and never throw.
+ */
+export function OffersPanel(props: Props) {
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => setMounted(true), []);
+  if (!mounted)
+    return (
+      <Card aria-label="Offers for this lead">
+        <CardHeader>
+          <CardTitle className="text-base">Offers</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <Skeleton className="h-16 w-full" />
+        </CardContent>
+      </Card>
+    );
+  return <OffersPanelContent {...props} />;
+}
+
+function OffersPanelContent({ lead, onUseInMessage }: Props) {
   // Key prefix ['lead'] is invalidated by the live provider on offer.changed (F12).
   const query = useQuery({
     queryKey: leadOffersKey(lead.id),
