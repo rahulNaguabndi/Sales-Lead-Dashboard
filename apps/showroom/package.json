@@ -4,7 +4,7 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "dev": "vite --port ${SHOWROOM_PORT:-3001}",
+    "dev": "vite",
     "build": "vite build",
     "typecheck": "tsc --noEmit -p tsconfig.json"
   },
