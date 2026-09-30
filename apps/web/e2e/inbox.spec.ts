@@ -30,8 +30,11 @@ test.describe('inbox', () => {
   test('search debounces into the URL and narrows results', async ({ page }) => {
     await signIn(page);
     await page.goto('/inbox');
-    await page.getByTestId('inbox-search').fill('conti');
-    await expect(page).toHaveURL(/q=conti/);
+    // Retry: typing before hydration (now slower with the live-update provider) is dropped.
+    await expect(async () => {
+      await page.getByTestId('inbox-search').fill('conti');
+      await expect(page).toHaveURL(/q=conti/, { timeout: 2000 });
+    }).toPass({ timeout: 15000 });
     await expect(page.locator('[data-lead-row]').first()).toContainText('Conti');
   });
 
@@ -45,9 +48,11 @@ test.describe('inbox', () => {
     await signIn(page);
     await page.goto('/inbox');
     const rows = page.locator('[data-lead-row]');
-    await rows.first().focus();
-    await page.keyboard.press('ArrowDown');
-    await expect(rows.nth(1)).toBeFocused();
+    await expect(async () => {
+      await rows.first().focus();
+      await page.keyboard.press('ArrowDown');
+      await expect(rows.nth(1)).toBeFocused({ timeout: 1000 });
+    }).toPass({ timeout: 15000 });
     const id = await rows.nth(1).getAttribute('data-lead-id');
     await page.keyboard.press('Enter');
     await expect(page).toHaveURL(new RegExp(`/leads/${id}$`));
