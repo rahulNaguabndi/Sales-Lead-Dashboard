@@ -133,6 +133,7 @@ export async function getLeadDetail(
       createdAt: lead.createdAt,
       updatedAt: lead.updatedAt,
       lastActivityAt: lead.lastActivityAt,
+      version: lead.version,
     },
     customer: {
       id: customer.id,

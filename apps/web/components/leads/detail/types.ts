@@ -45,6 +45,7 @@ export type LeadDetail = {
     createdAt: number;
     updatedAt: number;
     lastActivityAt: number | null;
+    version: number;
   };
   customer: {
     id: string;

@@ -31,6 +31,7 @@ const detail: LeadDetail = {
     createdAt: 1,
     updatedAt: 1,
     lastActivityAt: null,
+    version: 1,
   },
   customer: {
     id: 'c',
