@@ -1,23 +1,27 @@
 # Wave 1 integration report
 
 ## Branches
-All four reports have status SPECCED (spec/plan/tasks only, no implementation). The skill merges only DONE/PARTIAL, so all were skipped:
-- 002-authentication: SPECCED, skipped (US-1..US-5 not built)
-- 003-hierarchy-rbac: SPECCED, skipped
-- 009-lead-scoring: SPECCED, skipped
-- 013-showroom-app: SPECCED, skipped
+| Branch | Report status | Result |
+|---|---|---|
+| 002-authentication | DONE | merged, no conflicts |
+| 003-hierarchy-rbac | DONE | merged, no conflicts |
+| 009-lead-scoring | PARTIAL (seed score distribution off SC-003; no detail page yet) | merged, no conflicts |
+| 013-showroom-app | DONE | merged, no conflicts |
 
-## Conflicts
-None (nothing merged).
+## Integration fixes
+- `apps/web/server/auth/next-path.ts`: F02's `role === 'REP'` tripped F03's SC-004 guard; replaced with a `ROLE_HOME` map.
+- `vitest.config.ts`: added `hookTimeout: 60000`; DB-setup hooks timed out at 10s under parallel load (pass in isolation).
 
 ## Checks
-Not run; main is unchanged since wave 0.
+install ✅ · db:reset ✅ · typecheck ✅ · lint ✅ · unit/integration 205/205 ✅ · e2e 5/5 ✅ (PORT=3412 with a pre-started dev server; the default webServer start timed out on Windows because of a Next lockfile-patch warning)
 
 ## Gate
-- ❌ Login works (F02 not built)
-- ❌ `scopeFor(user)` tested (F03 not built)
-- ❌ `scoreLead()` tested (F09 not built)
-- ❌ Showroom form validates against shared contract (F13 not built)
+- ✅ Login works (auth e2e, integration tests)
+- ✅ `scopeFor(user)` tested (scope.test, authorize matrix)
+- ✅ `scoreLead()` tested (scoring.test.ts)
+- ✅ Showroom form validates against the shared contract (Enquiry.flow tests)
 
 ## Follow-ups
-Re-run build-feature with implementation for F02, F03, F09, F13 (tasks.md exists on each branch), then re-run integrate-wave 1. No tag `wave-1-done` created.
+- F09 seed score distribution (SC-003).
+- Showroom→inbox e2e skipped until the intake API lands (wave 2).
+- Playwright webServer start on Windows is flaky without a pre-started server.
