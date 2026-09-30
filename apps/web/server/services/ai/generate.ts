@@ -1,6 +1,6 @@
 import Anthropic from '@anthropic-ai/sdk';
 import { zodOutputFormat } from '@anthropic-ai/sdk/helpers/zod';
-import type { ZodType } from 'zod';
+import type { ZodType } from 'zod/v4';
 import type { Channel } from '@leaddesk/shared';
 import { getAiClient } from './client';
 import type { LeadAiContext } from './context';
@@ -55,7 +55,7 @@ async function callModel<T>(
       max_tokens: maxTokens,
       system: SYSTEM_PROMPT,
       messages: [{ role: 'user', content: userMessage }],
-      output_config: { effort, format: zodOutputFormat(schema as never) },
+      output_config: { effort, format: zodOutputFormat(schema) },
     });
     if (res.stop_reason === 'refusal') return { ok: false, reason: 'REFUSAL' };
     if (res.stop_reason === 'max_tokens') return { ok: false, reason: 'MAX_TOKENS' };

@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { z as z4 } from 'zod/v4';
 
 export const ACTIONS = [
   'CALL',
@@ -12,30 +13,31 @@ export const ACTIONS = [
 ] as const;
 export type AiAction = (typeof ACTIONS)[number];
 
-const ChannelEnum = z.enum(['CALL', 'WHATSAPP', 'SMS', 'EMAIL']);
-const DraftChannelEnum = z.enum(['WHATSAPP', 'SMS', 'EMAIL']);
+// The SDK's structured-output helper needs zod v4 schemas (shipped inside zod 3.25 as `zod/v4`).
+const ChannelEnum = z4.enum(['CALL', 'WHATSAPP', 'SMS', 'EMAIL']);
+const DraftChannelEnum = z4.enum(['WHATSAPP', 'SMS', 'EMAIL']);
 
-export const SuggestSchema = z.object({
-  summary: z.string().max(600),
-  nextBestAction: z.object({
-    action: z.enum(ACTIONS),
+export const SuggestSchema = z4.object({
+  summary: z4.string().max(600),
+  nextBestAction: z4.object({
+    action: z4.enum(ACTIONS),
     channel: ChannelEnum.nullable(),
-    timing: z.string().max(80),
-    reason: z.string().max(300),
-    offerId: z.string().nullable(),
+    timing: z4.string().max(80),
+    reason: z4.string().max(300),
+    offerId: z4.string().nullable(),
   }),
-  confidence: z.enum(['low', 'medium', 'high']),
+  confidence: z4.enum(['low', 'medium', 'high']),
 });
-export type SuggestOutput = z.infer<typeof SuggestSchema>;
+export type SuggestOutput = z4.infer<typeof SuggestSchema>;
 
-export const DraftSchema = z.object({
+export const DraftSchema = z4.object({
   channel: DraftChannelEnum,
-  language: z.string().length(2),
-  subject: z.string().max(120).nullable(),
-  body: z.string().max(1000),
-  offerId: z.string().nullable(),
+  language: z4.string().length(2),
+  subject: z4.string().max(120).nullable(),
+  body: z4.string().max(1000),
+  offerId: z4.string().nullable(),
 });
-export type DraftOutput = z.infer<typeof DraftSchema>;
+export type DraftOutput = z4.infer<typeof DraftSchema>;
 
 export type FallbackReason =
   | 'NO_API_KEY'
@@ -66,7 +68,7 @@ export type DraftResponse = Meta & {
 
 export const SuggestBodySchema = z.object({ regenerate: z.boolean().optional() }).strict();
 export const DraftBodySchema = z
-  .object({ channel: DraftChannelEnum, regenerate: z.boolean().optional() })
+  .object({ channel: z.enum(['WHATSAPP', 'SMS', 'EMAIL']), regenerate: z.boolean().optional() })
   .strict();
 export const FeedbackBodySchema = z
   .object({
