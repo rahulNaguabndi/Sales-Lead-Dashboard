@@ -1,8 +1,8 @@
 'use client';
 
+import { getSharedQueryClient } from '@/lib/sse/queryClient';
 import { useState } from 'react';
 import {
-  QueryClient,
   QueryClientProvider,
   keepPreviousData,
   useQuery,
@@ -169,7 +169,7 @@ function Inbox({ caps, initialData, initialKey, owners }: Props) {
 }
 
 export function InboxView(props: Props) {
-  const [client] = useState(() => new QueryClient({ defaultOptions: { queries: { retry: 1 } } }));
+  const [client] = useState(() => getSharedQueryClient());
   return (
     <QueryClientProvider client={client}>
       <Inbox {...props} />
