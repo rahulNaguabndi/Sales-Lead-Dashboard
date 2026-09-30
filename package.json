@@ -1,0 +1,39 @@
+{
+  "name": "eurodrive-lead-desk",
+  "private": true,
+  "version": "0.1.0",
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "dev": "concurrently -n web,showroom -c blue,green \"npm run dev:web\" \"npm run dev:showroom\"",
+    "dev:web": "npm run dev -w apps/web",
+    "dev:showroom": "npm run dev -w apps/showroom",
+    "redis:up": "docker compose up -d redis",
+    "db:generate": "npm run db:generate -w apps/web",
+    "db:migrate": "npm run db:migrate -w apps/web",
+    "db:seed": "npm run db:seed -w apps/web",
+    "db:reset": "npm run db:reset -w apps/web",
+    "simulate": "echo \"simulate is implemented by F10\" && exit 0",
+    "test": "vitest run",
+    "test:e2e": "playwright test",
+    "lint": "eslint . --ext .ts,.tsx --max-warnings 0",
+    "typecheck": "npm run typecheck -w packages/shared && npm run typecheck -w apps/web && npm run typecheck -w apps/showroom",
+    "format": "prettier --write ."
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.47.0",
+    "@typescript-eslint/eslint-plugin": "^7.18.0",
+    "@typescript-eslint/parser": "^7.18.0",
+    "concurrently": "^9.0.0",
+    "eslint": "^8.57.0",
+    "eslint-plugin-react-hooks": "^4.6.2",
+    "prettier": "^3.3.0",
+    "typescript": "^5.6.0",
+    "vitest": "^2.1.0"
+  }
+}
