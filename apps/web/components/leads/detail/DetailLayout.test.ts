@@ -61,6 +61,8 @@ const detail: LeadDetail = {
   },
 };
 
+// Slots other features have registered need app providers (e.g. React Query); test with them null.
+const baseSlots: LeadSlots = { ...leadSlots, followUps: null };
 const user = { id: 'u', name: 'U', role: 'REP' as const, teamId: 't' };
 const render = (slots: LeadSlots) =>
   renderToStaticMarkup(
@@ -74,7 +76,7 @@ const render = (slots: LeadSlots) =>
 
 describe('DetailLayout slots', () => {
   it('null slots render nothing', () => {
-    const html = render(leadSlots);
+    const html = render(baseSlots);
     expect(html).not.toContain('SLOT-');
     expect(html).toContain('Ada Lovelace');
   });
@@ -93,6 +95,6 @@ describe('DetailLayout slots', () => {
   });
 
   it('shows the claim prompt (composer read-only note) when the user cannot log activity but can claim', () => {
-    expect(render(leadSlots)).toContain('Claim this lead to log activities');
+    expect(render(baseSlots)).toContain('Claim this lead to log activities');
   });
 });

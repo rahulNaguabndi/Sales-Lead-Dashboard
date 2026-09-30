@@ -16,6 +16,7 @@ import { InboxFilters } from './InboxFilters';
 import { InboxSearch } from './InboxSearch';
 import { InboxTable } from './InboxTable';
 import { InboxTabs, type TabCaps } from './InboxTabs';
+import { DueTodayWidget } from '@/components/followups/due-today-widget';
 import { StatChips, type StatChipKey } from './StatChips';
 import { useInboxParams } from './useInboxParams';
 
@@ -74,6 +75,7 @@ function Inbox({ caps, initialData, initialKey, owners }: Props) {
     <div className="flex flex-col gap-3 p-4">
       <h2 className="sr-only">Lead inbox</h2>
       {data && <StatChips counts={data.counts} onSelect={onChip} />}
+      <DueTodayWidget />
       <div className="flex flex-wrap items-center justify-between gap-2">
         {data && (
           <InboxTabs

@@ -100,6 +100,8 @@ Reps schedule follow-ups on leads, see what's due today and what's overdue, and 
 | 3 | One PENDING follow-up per assignee per lead | Many | Keeps "the next step" unambiguous |
 | 4 | Rules as shared constants, overridable by env | DB settings table | Fast to build. The demo can shorten the timers |
 | 5 | A future follow-up protects from time-based COLD | Ignore follow-ups | Respects a deliberate plan ("customer back from holiday in 10 days") |
+| 6 | Follow-up system entries (snooze, cancel, supersede, "marked done without activity") are stored as SYSTEM `FOLLOW_UP_SCHEDULED` activities told apart by `metadata.action` (`scheduled`, `superseded`, `snoozed`, `done_without_activity`, `cancelled`; `missed` uses `FOLLOW_UP_MISSED`) | A SYSTEM `NOTE` type | The activity enum has no SYSTEM `NOTE` and the schema is owned by F01; no schema change needed |
+| 7 | `GET /api/leads/:id/follow-ups` returns the lead's pending follow-ups, cadence guidance and the derived at-risk flag for the detail card | Extra fields on the lead detail payload | Keeps F05's detail payload untouched |
 
 ## 9. Technical Plan Input
 **Endpoints**

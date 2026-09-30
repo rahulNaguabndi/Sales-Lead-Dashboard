@@ -1,9 +1,14 @@
-import { and, asc, eq, inArray, lt, sql } from 'drizzle-orm';
+import { and, asc, eq, inArray, lt, ne, sql } from 'drizzle-orm';
 import { monotonicFactory } from 'ulid';
 import {
   FOLLOW_UP_MAX_AHEAD_MS,
   FOLLOW_UP_PAST_TOLERANCE_MS,
   OPEN_STAGES,
+  cadence,
+  idleDays,
+  isAtRisk,
+  ruleConfigFromEnv,
+  type CadenceGuidance,
   type ActivityDTO,
   type Channel,
   type CreateFollowUp,
@@ -15,7 +20,7 @@ import {
 } from '@leaddesk/shared';
 import { writeAudit } from '../db/audit';
 import { db, withTx, type Tx } from '../db/client';
-import { activities, customers, followUps, leads } from '../db/schema';
+import { activities, customers, followUps, leads, users } from '../db/schema';
 import { bus } from '../events/bus';
 import { ConflictError, ForbiddenError, NotFoundError, ValidationError } from '../http/errors';
 import { authorize } from '../policy/authorize';
@@ -490,7 +495,7 @@ export async function listForUser(
   let target = user.id;
   if (query.owner && query.owner !== user.id) {
     const scope = await getScope(user.id);
-    if (scope.role === 'REP' || !scope.userIds.has(query.owner)) {
+    if (!scope.userIds.has(query.owner)) {
       throw new ForbiddenError('You cannot view follow-ups for that user');
     }
     target = query.owner;
@@ -556,7 +561,63 @@ export async function listForUser(
   };
 }
 
+export type LeadFollowUps = {
+  items: (FollowUpDTO & { assigneeName: string | null; assigneeColor: string | null })[];
+  cadence: CadenceGuidance;
+  atRisk: { atRisk: boolean; idleDays: number };
+};
+
+/** Pending follow-ups of one lead plus cadence guidance and the derived at-risk flag. */
+export async function listForLead(
+  user: CurrentUser,
+  leadId: string,
+  opts: { now?: number } = {},
+): Promise<LeadFollowUps> {
+  const now = opts.now ?? Date.now();
+  const lead = db.select().from(leads).where(eq(leads.id, leadId)).get();
+  if (!lead) throw new NotFoundError('lead');
+  await authorize(user, 'lead:read', {
+    kind: 'lead',
+    lead: { id: lead.id, ownerId: lead.ownerId, teamId: lead.teamId, stage: lead.stage },
+  });
+  const rows = db
+    .select({ f: followUps, name: users.name, color: users.avatarColor })
+    .from(followUps)
+    .innerJoin(users, eq(users.id, followUps.assignedTo))
+    .where(and(eq(followUps.leadId, leadId), eq(followUps.status, 'PENDING')))
+    .orderBy(asc(followUps.dueAt))
+    .all();
+  const prior = db
+    .select({ n: sql<number>`count(*)` })
+    .from(activities)
+    .where(
+      and(eq(activities.leadId, leadId), eq(activities.kind, 'USER'), ne(activities.type, 'NOTE')),
+    )
+    .get();
+  const customer = db
+    .select({ channel: customers.preferredChannel })
+    .from(customers)
+    .where(eq(customers.id, lead.customerId))
+    .get();
+  return {
+    items: rows.map((r) => ({
+      ...toFollowUpDTO(r.f),
+      assigneeName: r.name,
+      assigneeColor: r.color,
+    })),
+    cadence: cadence.next({
+      priorAttempts: prior?.n ?? 0,
+      preferredChannel: customer?.channel ?? 'CALL',
+    }),
+    atRisk: {
+      atRisk: isAtRisk(lead, now, ruleConfigFromEnv()),
+      idleDays: idleDays(lead, now),
+    },
+  };
+}
+
 export const followupService = {
+  listForLead,
   create,
   patch,
   complete,
