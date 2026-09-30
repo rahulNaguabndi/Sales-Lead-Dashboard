@@ -12,3 +12,7 @@ export * from './schemas/lead-filters';
 export * from './scoring';
 export * from './followup-rules';
 export * from './schemas/assignment';
+export * from './channels';
+export * from './customer-timezone';
+export * from './templates';
+export * from './schemas/customer';
