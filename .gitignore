@@ -5,8 +5,8 @@ out/
 coverage/
 playwright-report/
 test-results/
-data/*.db
-data/*.db-*
+*.db
+*.db-*
 .env
 .env.local
 *.log
