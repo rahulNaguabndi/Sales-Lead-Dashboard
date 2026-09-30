@@ -36,6 +36,8 @@ test('rep schedules Tomorrow 18:00 from the follow-up card and sees it listed', 
   await page.goto(`/leads/${leadId}`);
   const card = page.getByTestId('followup-card');
   await expect(card).toBeVisible();
+  // Wait for the follow-up query to settle before interacting (avoids a GET/POST race).
+  await expect(card.getByTestId('followup-next').or(card.getByTestId('followup-empty'))).toBeVisible();
   await card.getByRole('button', { name: /^(Schedule|Reschedule)$/ }).click();
   await page.getByRole('button', { name: 'Tomorrow 18:00' }).click();
 

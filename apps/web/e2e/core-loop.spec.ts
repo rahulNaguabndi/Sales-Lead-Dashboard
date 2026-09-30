@@ -33,15 +33,15 @@ const dbFile = path.resolve(
   (process.env.DATABASE_URL ?? './data/leaddesk.db').replace(/^file:/, ''),
 );
 
-function sofiaLead(): { id: string; version: number } {
+function sofiaLead(): { id: string; version: number; reference: string } {
   const db = new Database(dbFile, { readonly: true });
   try {
     return db
       .prepare(
-        `select l.id, l.version from leads l join users u on u.id = l.owner_id
+        `select l.id, l.version, l.reference from leads l join users u on u.id = l.owner_id
          where u.email = ? and l.stage in ('NEW','CONTACTED','QUALIFIED') order by l.created_at limit 1`,
       )
-      .get(SOFIA) as { id: string; version: number };
+      .get(SOFIA) as { id: string; version: number; reference: string };
   } finally {
     db.close();
   }
@@ -125,7 +125,7 @@ test('UI: log a call from the lead page, reload, entry is still there', async ({
   await page.reload();
   await expect(page.getByText('Called customer').first()).toBeVisible();
 
-  await page.goto('/inbox');
+  await page.goto(`/inbox?q=${lead.reference}`);
   await expect(
     page.locator(`[data-lead-id="${lead.id}"]`).getByText(/Called · (just )?now/),
   ).toBeVisible();
