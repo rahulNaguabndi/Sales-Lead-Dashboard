@@ -1,24 +1,29 @@
 # F17 Build Report
-Status: SPECCED
-Branch: 017-demographics · Commits: 1 (spec) + 1 (report)
+Status: DONE
+Branch: 017-demographics · Commits: 4
 
 ## Acceptance scenarios
-| Story/Scenario | Result | Evidence |
+| Story/Scenario | Result | Evidence (test name or note) |
 |---|---|---|
-| US-1 … US-4 | ❌ not built yet | spec-only run. Tasks T003–T024 cover them |
+| US-1 Conversion by band (incl. suppression) | ✅ | suppression.test.ts, service.test.ts, e2e "VP sees three charts and the table view" |
+| US-2 Channel mix | ✅ | service.test.ts, palette.test.ts, e2e charts visible |
+| US-3 Model-interest heatmap | ✅ | service.test.ts, e2e charts visible |
+| US-4 Filters and RBAC | ✅ | route-rbac.test.ts, e2e manager has no team filter, rep 403 |
+| SC-003 seed story (WhatsApp vs Call) | ✅ | seed-story.test.ts |
+| SC-004 timing < 800 ms, dark-mode pass | 🟡 | not formally benchmarked; dark mode covered by palette contrast tests |
 
 ## Checks
-typecheck: n/a · lint: n/a · unit: n/a · e2e: n/a (spec-only)
+typecheck: pass · lint: pass · unit: 1097/1097 · e2e: 3/3 (demographics spec only)
 
 ## Assumptions made (see assumptions.md)
-17 entries, all derived from docs/features/F17 or inferred (F16 stubs, tie-breaks, org average, manager `teamId`).
+17 entries, derived from F17 doc or inferred.
 
 ## Deviations from spec
-None. One clarification: suppressed conversion and channel entries still expose their sample size n (required by the "n = 7, min 20" wording). See research R3.
+None.
 
 ## Requires F01 / other-feature changes
-- Depends on F16 exports (period resolver, scope predicate, `ChartCard`, `FilterBar`, `useLiveRefresh`, `tabs.ts`), which are stubbed in F17-owned paths if absent.
-- SC-003 relies on the seed's age/channel correlation (F01). Verified in task T024.
+- F16 exports are stubbed in F17-owned paths (`_f16-stubs.ts`, `tabs.ts`); replace when F16 merges.
 
 ## Known issues / follow-ups
-Differencing attack on suppression is out of scope (GDPR note). Caching is left to F20.
+- Full e2e suite not run; only the demographics spec.
+- Local DB needed `npm run db:reset` before e2e.

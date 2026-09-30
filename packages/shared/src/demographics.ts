@@ -40,7 +40,6 @@ export const DemographicsQuerySchema = z
 export type DemographicsQuery = z.infer<typeof DemographicsQuerySchema>;
 
 const Band = z.enum(DEMO_BANDS);
-const Channel = z.enum(CHANNELS);
 
 export const ConversionEntrySchema = z.discriminatedUnion('suppressed', [
   z
