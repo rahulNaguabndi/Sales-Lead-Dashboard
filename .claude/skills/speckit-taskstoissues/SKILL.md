@@ -1,14 +1,15 @@
 ---
-name: 'speckit-taskstoissues'
-description: 'Convert existing tasks into actionable, dependency-ordered GitHub issues for the feature based on available design artifacts.'
-argument-hint: 'Optional filter or label for GitHub issues'
-compatibility: 'Requires spec-kit project structure with .specify/ directory'
+name: "speckit-taskstoissues"
+description: "Convert existing tasks into actionable, dependency-ordered GitHub issues for the feature based on available design artifacts."
+argument-hint: "Optional filter or label for GitHub issues"
+compatibility: "Requires spec-kit project structure with .specify/ directory"
 metadata:
-  author: 'github-spec-kit'
-  source: 'templates/commands/taskstoissues.md'
+  author: "github-spec-kit"
+  source: "templates/commands/taskstoissues.md"
 user-invocable: true
 disable-model-invocation: false
 ---
+
 
 ## User Input
 
@@ -21,7 +22,6 @@ You **MUST** consider the user input before proceeding (if not empty).
 ## Pre-Execution Checks
 
 **Check for extension hooks (before tasks-to-issues conversion)**:
-
 - Check if `.specify/extensions.yml` exists in the project root.
 - If it exists, read it and look for entries under the `hooks.before_taskstoissues` key
 - If the YAML cannot be parsed or is invalid, do not skip silently: tell the user that `.specify/extensions.yml` could not be read (include the parser error) and that no hooks were checked, including any mandatory (`optional: false`) hooks registered there, then continue normally
@@ -81,7 +81,6 @@ git config --get remote.origin.url
 
 **Check for extension hooks (after tasks-to-issues conversion)**:
 Check if `.specify/extensions.yml` exists in the project root.
-
 - If it exists, read it and look for entries under the `hooks.after_taskstoissues` key
 - If the YAML cannot be parsed or is invalid, do not skip silently: tell the user that `.specify/extensions.yml` could not be read (include the parser error) and that no hooks were checked, including any mandatory (`optional: false`) hooks registered there, then continue normally
 - Filter out hooks where `enabled` is explicitly `false`. Treat hooks without an `enabled` field as enabled by default.

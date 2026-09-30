@@ -6,3 +6,8 @@ specs
 docs
 package-lock.json
 apps/web/server/db/migrations
+.claude
+.specify
+PLAN.md
+README.md
+scripts
