@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, type ReactNode } from 'react';
+import { ComposerProvider } from '@/components/leads/composer';
 import { Timeline } from '@/components/timeline/Timeline';
 import { CustomerCard } from './CustomerCard';
 import { HistoryCard } from './HistoryCard';
@@ -41,51 +42,53 @@ export function DetailLayout({
   const show = (id: Tab) => `${tab === id ? 'block' : 'hidden'} space-y-4 lg:block`;
 
   return (
-    <div className="space-y-4 p-4 lg:p-6">
-      <LeadHeader detail={detail} actions={slot('headerActions')} />
-      {slot('liveNote')}
+    <ComposerProvider>
+      <div className="space-y-4 p-4 lg:p-6">
+        <LeadHeader detail={detail} actions={slot('headerActions')} />
+        {slot('liveNote')}
 
-      <div role="tablist" aria-label="Lead sections" className="flex gap-1 lg:hidden">
-        {TABS.map((t) => (
-          <button
-            key={t.id}
-            type="button"
-            role="tab"
-            aria-selected={tab === t.id}
-            className={`rounded-md px-3 py-1.5 text-sm ${
-              tab === t.id ? 'bg-muted font-medium' : 'text-muted-foreground'
-            }`}
-            onClick={() => setTab(t.id)}
-          >
-            {t.label}
-          </button>
-        ))}
-      </div>
+        <div role="tablist" aria-label="Lead sections" className="flex gap-1 lg:hidden">
+          {TABS.map((t) => (
+            <button
+              key={t.id}
+              type="button"
+              role="tab"
+              aria-selected={tab === t.id}
+              className={`rounded-md px-3 py-1.5 text-sm ${
+                tab === t.id ? 'bg-muted font-medium' : 'text-muted-foreground'
+              }`}
+              onClick={() => setTab(t.id)}
+            >
+              {t.label}
+            </button>
+          ))}
+        </div>
 
-      <div className="grid gap-4 lg:grid-cols-[minmax(0,320px)_minmax(0,1fr)_minmax(0,300px)]">
-        <div data-region="left" className={show('details')}>
-          <CustomerCard customer={customer} extras={slot('customerExtras')} />
-          {slot('channels')}
-          <InterestCard lead={lead} />
-          <HistoryCard history={detail.history} />
-        </div>
-        <div data-region="center" className={show('timeline')}>
-          {slots.composer ? (
-            slot('composer')
-          ) : !permissions.canLogActivity && permissions.canClaim ? (
-            <p className="rounded-md border border-dashed border-border p-3 text-sm text-muted-foreground">
-              Claim this lead to work on it
-            </p>
-          ) : null}
-          <Timeline leadId={lead.id} initial={initialActivities} />
-        </div>
-        <div data-region="right" className={show('actions')}>
-          <ScoreCard lead={lead} />
-          {slot('followUps')}
-          {slot('offers')}
-          {slot('ai')}
+        <div className="grid gap-4 lg:grid-cols-[minmax(0,320px)_minmax(0,1fr)_minmax(0,300px)]">
+          <div data-region="left" className={show('details')}>
+            <CustomerCard customer={customer} extras={slot('customerExtras')} />
+            {slot('channels')}
+            <InterestCard lead={lead} />
+            <HistoryCard history={detail.history} />
+          </div>
+          <div data-region="center" className={show('timeline')}>
+            {slots.composer ? (
+              slot('composer')
+            ) : !permissions.canLogActivity && permissions.canClaim ? (
+              <p className="rounded-md border border-dashed border-border p-3 text-sm text-muted-foreground">
+                Claim this lead to work on it
+              </p>
+            ) : null}
+            <Timeline leadId={lead.id} initial={initialActivities} />
+          </div>
+          <div data-region="right" className={show('actions')}>
+            <ScoreCard lead={lead} />
+            {slot('followUps')}
+            {slot('offers')}
+            {slot('ai')}
+          </div>
         </div>
       </div>
-    </div>
+    </ComposerProvider>
   );
 }

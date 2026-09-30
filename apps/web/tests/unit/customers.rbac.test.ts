@@ -5,12 +5,7 @@ import { runMigrations } from '../../server/db/migrate';
 import { seedDatabase } from '../../server/db/seed';
 import { activities, auditLog, customers, leads } from '../../server/db/schema';
 import type { CurrentUser } from '../../server/policy';
-import {
-  getContactLink,
-  getProfile,
-  updatePreferences,
-  ADAPTERS,
-} from '../../server/channels';
+import { getContactLink, getProfile, updatePreferences, ADAPTERS } from '../../server/channels';
 
 let db: Db;
 const users: Record<string, CurrentUser> = {};
@@ -84,7 +79,12 @@ describe('history redaction', () => {
   it('redacts a past lead outside the caller scope', async () => {
     // Give the rep's customer a second lead that belongs to a foreign team.
     const base = db.select().from(leads).where(eq(leads.id, foreignLead.id)).get()!;
-    const clone = { ...base, id: '01HZZZZZZZZZZZZZZZZZZZZZZZ', reference: 'EDM-TEST-REDACT', customerId: ownLead.customerId };
+    const clone = {
+      ...base,
+      id: '01HZZZZZZZZZZZZZZZZZZZZZZZ',
+      reference: 'EDM-TEST-REDACT',
+      customerId: ownLead.customerId,
+    };
     db.insert(leads).values(clone).run();
     const p = await getProfile(rep, ownLead.customerId, ownLead.id, { database: db });
     const red = p.history.leads.find((l) => l.reference === 'EDM-TEST-REDACT')!;
@@ -96,8 +96,12 @@ describe('history redaction', () => {
   it('every seeded returning customer has a history entry (SC-004)', () => {
     const returning = db.select().from(customers).where(eq(customers.isReturning, true)).all();
     for (const c of returning) {
-      const l = db.all<{ n: number }>(sql`SELECT count(*) n FROM leads WHERE customer_id = ${c.id}`)[0]!.n;
-      const pu = db.all<{ n: number }>(sql`SELECT count(*) n FROM purchases WHERE customer_id = ${c.id}`)[0]!.n;
+      const l = db.all<{ n: number }>(
+        sql`SELECT count(*) n FROM leads WHERE customer_id = ${c.id}`,
+      )[0]!.n;
+      const pu = db.all<{ n: number }>(
+        sql`SELECT count(*) n FROM purchases WHERE customer_id = ${c.id}`,
+      )[0]!.n;
       expect(l + pu).toBeGreaterThan(0);
     }
   });
@@ -107,7 +111,11 @@ describe('PATCH preferences', () => {
   it('updates customer, audit row and SYSTEM note in one go', async () => {
     const before = db.select().from(customers).where(eq(customers.id, ownLead.customerId)).get()!;
     const target = before.preferredChannel === 'CALL' ? 'SMS' : 'CALL';
-    const nActs = db.select().from(activities).where(eq(activities.leadId, ownLead.id)).all().length;
+    const nActs = db
+      .select()
+      .from(activities)
+      .where(eq(activities.leadId, ownLead.id))
+      .all().length;
     const nAudit = db.select().from(auditLog).all().length;
     const v = await updatePreferences(
       rep,
@@ -141,18 +149,35 @@ describe('PATCH preferences', () => {
   });
   it('forbids out-of-scope writers and rejects mismatched leads', async () => {
     await expect(
-      updatePreferences(rep, foreignLead.customerId, { leadId: foreignLead.id, bestTime: 'MORNING' }, { database: db }),
+      updatePreferences(
+        rep,
+        foreignLead.customerId,
+        { leadId: foreignLead.id, bestTime: 'MORNING' },
+        { database: db },
+      ),
     ).rejects.toMatchObject({ statusCode: 404 });
     await expect(
-      updatePreferences(rep, ownLead.customerId, { leadId: foreignLead.id, bestTime: 'MORNING' }, { database: db }),
+      updatePreferences(
+        rep,
+        ownLead.customerId,
+        { leadId: foreignLead.id, bestTime: 'MORNING' },
+        { database: db },
+      ),
     ).rejects.toMatchObject({ statusCode: 404 });
   });
   it('rolls back everything when the transaction fails', async () => {
     const before = db.select().from(customers).where(eq(customers.id, ownLead.customerId)).get()!;
     const nAudit = db.select().from(auditLog).all().length;
-    db.run(sql`CREATE TRIGGER fail_note BEFORE INSERT ON activities WHEN NEW.note LIKE 'Preferences updated%' BEGIN SELECT RAISE(ABORT, 'boom'); END`);
+    db.run(
+      sql`CREATE TRIGGER fail_note BEFORE INSERT ON activities WHEN NEW.note LIKE 'Preferences updated%' BEGIN SELECT RAISE(ABORT, 'boom'); END`,
+    );
     await expect(
-      updatePreferences(rep, ownLead.customerId, { leadId: ownLead.id, bestTime: before.bestTime === 'MORNING' ? 'EVENING' : 'MORNING' }, { database: db }),
+      updatePreferences(
+        rep,
+        ownLead.customerId,
+        { leadId: ownLead.id, bestTime: before.bestTime === 'MORNING' ? 'EVENING' : 'MORNING' },
+        { database: db },
+      ),
     ).rejects.toThrow();
     db.run(sql`DROP TRIGGER fail_note`);
     const after = db.select().from(customers).where(eq(customers.id, ownLead.customerId)).get()!;
@@ -166,7 +191,12 @@ describe('contact link (RBAC, no writes)', () => {
     const nActs = db.select().from(activities).all().length;
     const cust = db.select().from(customers).where(eq(customers.id, ownLead.customerId)).get()!;
     const channel = cust.phone ? 'WHATSAPP' : 'EMAIL';
-    const r = await getContactLink(rep, ownLead.id, { channel, template: 'first_contact' }, { database: db });
+    const r = await getContactLink(
+      rep,
+      ownLead.id,
+      { channel, template: 'first_contact' },
+      { database: db },
+    );
     expect(r.href).toMatch(/^(https:\/\/wa\.me\/|mailto:)/);
     expect(db.select().from(activities).all().length).toBe(nActs);
   });
@@ -174,15 +204,27 @@ describe('contact link (RBAC, no writes)', () => {
     await expect(
       getContactLink(rep, foreignLead.id, { channel: 'CALL' }, { database: db }),
     ).rejects.toMatchObject({ statusCode: 404 });
-    db.update(customers).set({ email: null, phone: '+393471234567' }).where(eq(customers.id, ownLead.customerId)).run();
+    db.update(customers)
+      .set({ email: null, phone: '+393471234567' })
+      .where(eq(customers.id, ownLead.customerId))
+      .run();
     await expect(
       getContactLink(rep, ownLead.id, { channel: 'EMAIL' }, { database: db }),
     ).rejects.toMatchObject({ statusCode: 400 });
     await expect(
-      getContactLink(rep, ownLead.id, { channel: 'SMS', template: 'offer_share' }, { database: db }),
+      getContactLink(
+        rep,
+        ownLead.id,
+        { channel: 'SMS', template: 'offer_share' },
+        { database: db },
+      ),
     ).rejects.toMatchObject({ statusCode: 400 });
-    await expect(getContactLink(manager, ownLead.id, { channel: 'CALL' }, { database: db })).resolves.toBeTruthy();
-    await expect(getContactLink(vp, foreignLead.id, { channel: 'CALL' }, { database: db })).resolves.toBeTruthy();
+    await expect(
+      getContactLink(manager, ownLead.id, { channel: 'CALL' }, { database: db }),
+    ).resolves.toBeTruthy();
+    await expect(
+      getContactLink(vp, foreignLead.id, { channel: 'CALL' }, { database: db }),
+    ).resolves.toBeTruthy();
   });
 });
 
@@ -192,10 +234,14 @@ describe('DeepLinkAdapter', () => {
     expect(ADAPTERS.WHATSAPP.buildLink(c, 'Ciao')).toBe('https://wa.me/393471234567?text=Ciao');
     expect(ADAPTERS.CALL.buildLink(c, '')).toBe('tel:+393471234567');
     expect(ADAPTERS.SMS.buildLink(c, 'Hi')).toBe('sms:+393471234567?&body=Hi');
-    expect(ADAPTERS.EMAIL.buildLink(c, 'Body', { subject: 'Sub' })).toBe('mailto:a@b.it?subject=Sub&body=Body');
+    expect(ADAPTERS.EMAIL.buildLink(c, 'Body', { subject: 'Sub' })).toBe(
+      'mailto:a@b.it?subject=Sub&body=Body',
+    );
     for (const a of Object.values(ADAPTERS)) expect(a.send).toBeUndefined();
   });
   it('throws for unavailable channels', () => {
-    expect(() => ADAPTERS.EMAIL.buildLink({ phone: '+39347', email: null }, 'x')).toThrow('No email');
+    expect(() => ADAPTERS.EMAIL.buildLink({ phone: '+39347', email: null }, 'x')).toThrow(
+      'No email',
+    );
   });
 });

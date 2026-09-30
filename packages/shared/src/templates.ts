@@ -31,7 +31,7 @@ export const TEMPLATES: Record<TemplateKey, Record<TemplateLang, Template>> = {
       body: "Bonjour {firstName}, c'est {repFirstName} de {dealership}. Merci de votre intérêt pour la {model} ! Quand souhaitez-vous que je vous contacte pour les détails ?",
     },
     it: {
-      subject: "Il tuo interesse per la {model}",
+      subject: 'Il tuo interesse per la {model}',
       body: "Ciao {firstName}, sono {repFirstName} di {dealership}. Grazie per l'interesse per la {model}! Quando preferisci che ti contatti per i dettagli?",
     },
     es: {
@@ -88,7 +88,7 @@ export const TEMPLATES: Record<TemplateKey, Record<TemplateLang, Template>> = {
     },
     fr: {
       subject: 'Essai de la {model}',
-      body: "Bonjour {firstName}, souhaitez-vous essayer la {model} chez {dealership} ? Je peux vous proposer un créneau qui vous convient. Cordialement, {repFirstName}",
+      body: 'Bonjour {firstName}, souhaitez-vous essayer la {model} chez {dealership} ? Je peux vous proposer un créneau qui vous convient. Cordialement, {repFirstName}',
     },
     it: {
       subject: 'Prova su strada della {model}',
@@ -108,7 +108,7 @@ export const TEMPLATES: Record<TemplateKey, Record<TemplateLang, Template>> = {
     },
     en: {
       subject: 'Test drive the {model}',
-      body: "Hi {firstName}, would you like to test drive the {model} at {dealership}? I can find a time that suits you. Best, {repFirstName}",
+      body: 'Hi {firstName}, would you like to test drive the {model} at {dealership}? I can find a time that suits you. Best, {repFirstName}',
     },
   },
   offer_share: {
@@ -122,7 +122,7 @@ export const TEMPLATES: Record<TemplateKey, Record<TemplateLang, Template>> = {
     },
     it: {
       subject: 'La tua offerta per la {model}',
-      body: 'Ciao {firstName}, ho un\'offerta per la {model}: {offer}. Vuoi che ti mandi i dettagli? {repFirstName}, {dealership}',
+      body: "Ciao {firstName}, ho un'offerta per la {model}: {offer}. Vuoi che ti mandi i dettagli? {repFirstName}, {dealership}",
     },
     es: {
       subject: 'Su oferta para el {model}',
@@ -138,7 +138,7 @@ export const TEMPLATES: Record<TemplateKey, Record<TemplateLang, Template>> = {
     },
     en: {
       subject: 'Your offer for the {model}',
-      body: "Hi {firstName}, I have an offer for the {model}: {offer}. Shall I send you the details? {repFirstName}, {dealership}",
+      body: 'Hi {firstName}, I have an offer for the {model}: {offer}. Shall I send you the details? {repFirstName}, {dealership}',
     },
   },
   callback_confirm: {

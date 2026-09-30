@@ -20,19 +20,21 @@ describe('template completeness (SC-002)', () => {
   it('has 7 languages x 5 keys', () => {
     expect(TEMPLATE_KEYS).toHaveLength(5);
     expect(TEMPLATE_LANGS).toHaveLength(7);
-    for (const key of TEMPLATE_KEYS) for (const lang of TEMPLATE_LANGS) {
-      expect(TEMPLATES[key][lang].body.length).toBeGreaterThan(10);
-      expect(TEMPLATES[key][lang].subject.length).toBeGreaterThan(3);
-    }
+    for (const key of TEMPLATE_KEYS)
+      for (const lang of TEMPLATE_LANGS) {
+        expect(TEMPLATES[key][lang].body.length).toBeGreaterThan(10);
+        expect(TEMPLATES[key][lang].subject.length).toBeGreaterThan(3);
+      }
   });
   it('renders with no leftover placeholders', () => {
-    for (const key of TEMPLATE_KEYS) for (const lang of TEMPLATE_LANGS) {
-      const r = renderTemplate(key, lang, vars);
-      expect(r.body).not.toMatch(/[{}]/);
-      expect(r.subject).not.toMatch(/[{}]/);
-      expect(r.body).not.toMatch(/<[^>]+>/);
-      expect(r.langUsed).toBe(lang);
-    }
+    for (const key of TEMPLATE_KEYS)
+      for (const lang of TEMPLATE_LANGS) {
+        const r = renderTemplate(key, lang, vars);
+        expect(r.body).not.toMatch(/[{}]/);
+        expect(r.subject).not.toMatch(/[{}]/);
+        expect(r.body).not.toMatch(/<[^>]+>/);
+        expect(r.langUsed).toBe(lang);
+      }
   });
 });
 

@@ -23,9 +23,11 @@ export const PatchPreferencesSchema = z
     { message: 'At least one preference is required' },
   )
   .refine(
-    (v) =>
-      !v.preferredChannel || !v.secondaryChannel || v.preferredChannel !== v.secondaryChannel,
-    { message: 'Secondary channel must differ from the preferred channel', path: ['secondaryChannel'] },
+    (v) => !v.preferredChannel || !v.secondaryChannel || v.preferredChannel !== v.secondaryChannel,
+    {
+      message: 'Secondary channel must differ from the preferred channel',
+      path: ['secondaryChannel'],
+    },
   );
 
 export type PatchPreferences = z.infer<typeof PatchPreferencesSchema>;

@@ -177,11 +177,18 @@ const nice = (s: string) => s.charAt(0) + s.slice(1).toLowerCase();
 
 function describeChange(
   before: typeof customers.$inferSelect,
-  next: { preferredChannel: Channel; secondaryChannel: Channel | null; bestTime: BestTime; language: string },
+  next: {
+    preferredChannel: Channel;
+    secondaryChannel: Channel | null;
+    bestTime: BestTime;
+    language: string;
+  },
 ): string {
   const parts: string[] = [];
   if (next.preferredChannel !== before.preferredChannel) {
-    parts.push(`${CHANNEL_LABEL[before.preferredChannel]} → ${CHANNEL_LABEL[next.preferredChannel]}`);
+    parts.push(
+      `${CHANNEL_LABEL[before.preferredChannel]} → ${CHANNEL_LABEL[next.preferredChannel]}`,
+    );
   }
   if (next.secondaryChannel !== before.secondaryChannel) {
     const f = before.secondaryChannel ? CHANNEL_LABEL[before.secondaryChannel] : 'none';
@@ -191,7 +198,8 @@ function describeChange(
   if (next.bestTime !== before.bestTime) {
     parts.push(`best time ${nice(before.bestTime)} → ${nice(next.bestTime)}`);
   }
-  if (next.language !== before.language) parts.push(`language ${before.language} → ${next.language}`);
+  if (next.language !== before.language)
+    parts.push(`language ${before.language} → ${next.language}`);
   return `Preferences updated: ${parts.join(', ') || 'no changes'}`;
 }
 
@@ -280,14 +288,22 @@ export async function getContactLink(
 
   const adapter = ADAPTERS[q.channel];
   const avail = adapter.isAvailable(customer);
-  if (!avail.available) throw new ValidationError(avail.reason, { fields: { channel: avail.reason } });
+  if (!avail.available)
+    throw new ValidationError(avail.reason, { fields: { channel: avail.reason } });
 
   if (q.channel === 'CALL') {
-    return { href: adapter.buildLink(customer, ''), message: '', truncated: false, langUsed: customer.language };
+    return {
+      href: adapter.buildLink(customer, ''),
+      message: '',
+      truncated: false,
+      langUsed: customer.language,
+    };
   }
   const key = q.template ?? 'first_contact';
   if (key === 'offer_share' && !q.offer) {
-    throw new ValidationError('No applicable offer', { fields: { template: 'No applicable offer' } });
+    throw new ValidationError('No applicable offer', {
+      fields: { template: 'No applicable offer' },
+    });
   }
   const model = VEHICLES.find((v) => v.slug === lead.vehicleModel)?.name ?? lead.vehicleModel ?? '';
   const rendered = renderTemplate(key, q.lang ?? customer.language, {
