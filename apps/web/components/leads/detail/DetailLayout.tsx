@@ -43,6 +43,7 @@ export function DetailLayout({
   return (
     <div className="space-y-4 p-4 lg:p-6">
       <LeadHeader detail={detail} actions={slot('headerActions')} />
+      {slot('liveNote')}
 
       <div role="tablist" aria-label="Lead sections" className="flex gap-1 lg:hidden">
         {TABS.map((t) => (

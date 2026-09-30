@@ -40,7 +40,15 @@ describe('GET /api/events handler', () => {
     const read = async () => dec.decode((await reader.read()).value);
     expect(await read()).toBe('retry: 3000\n\n');
     expect(await read()).toContain('event: hello');
-    emit({ type: 'lead.updated', at: 1, by: null, leadId: 'l1', teamId: 'dach', ownerId: 'anna', changes: {} });
+    emit({
+      type: 'lead.updated',
+      at: 1,
+      by: null,
+      leadId: 'l1',
+      teamId: 'dach',
+      ownerId: 'anna',
+      changes: {},
+    });
     expect(await read()).toContain('event: lead.updated');
     vi.advanceTimersByTime(25_000);
     expect(await read()).toBe(': ping\n\n');

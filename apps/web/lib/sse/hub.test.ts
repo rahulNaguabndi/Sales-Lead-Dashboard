@@ -17,17 +17,36 @@ function fakeBus() {
 }
 
 const scope = (userIds: string[], teamIds: string[], isVP = false): FilterScope => ({
-  userIds: new Set(userIds), teamIds: new Set(teamIds), isVP,
+  userIds: new Set(userIds),
+  teamIds: new Set(teamIds),
+  isVP,
 });
 const ev = (over: Record<string, unknown> = {}) =>
   ({
-    type: 'lead.updated', at: 1, by: null, leadId: 'l1', teamId: 'dach', ownerId: 'anna', changes: {}, ...over,
+    type: 'lead.updated',
+    at: 1,
+    by: null,
+    leadId: 'l1',
+    teamId: 'dach',
+    ownerId: 'anna',
+    changes: {},
+    ...over,
   }) as LeadDeskEvent;
 
 function client(userId: string, sc: FilterScope, lastEventId?: string) {
   const frames: string[] = [];
   const closed = vi.fn();
-  return { frames, closed, opts: { userId, scope: sc, lastEventId, write: (f: string) => void frames.push(f), close: closed } };
+  return {
+    frames,
+    closed,
+    opts: {
+      userId,
+      scope: sc,
+      lastEventId,
+      write: (f: string) => void frames.push(f),
+      close: closed,
+    },
+  };
 }
 
 describe('hub', () => {
@@ -97,7 +116,10 @@ describe('hub', () => {
     emit(ev());
     emit(ev({ ownerId: 'other', teamId: 'south' }));
     emit(ev({ leadId: 'l2' }));
-    const firstId = first.frames.find((f) => f.startsWith('id: '))!.split('\n')[0]!.slice(4);
+    const firstId = first.frames
+      .find((f) => f.startsWith('id: '))!
+      .split('\n')[0]!
+      .slice(4);
     const re = client('anna', scope(['anna'], ['dach']), firstId);
     hub.connect(re.opts);
     const replayed = re.frames.filter((f) => f.startsWith('id: '));
@@ -113,7 +135,10 @@ describe('hub', () => {
     const a = client('anna', scope(['anna'], ['dach']));
     hub.connect(a.opts);
     for (let i = 0; i < 501; i++) emit(ev({ leadId: `l${i}` }));
-    const firstId = a.frames.find((f) => f.startsWith('id: '))!.split('\n')[0]!.slice(4);
+    const firstId = a.frames
+      .find((f) => f.startsWith('id: '))!
+      .split('\n')[0]!
+      .slice(4);
     const re = client('anna', scope(['anna'], ['dach']), firstId);
     hub.connect(re.opts);
     expect(re.frames.some((f) => f.includes('event: resync'))).toBe(true);

@@ -10,7 +10,14 @@ describe('sse wire frames', () => {
     expect(PING_FRAME).toBe(': ping\n\n');
   });
   it('encodes an event frame ending with a blank line', () => {
-    const e = { type: 'offer.changed', offerId: 'o', teamId: null, ownerId: null, at: 1, by: null } as LeadDeskEvent;
+    const e = {
+      type: 'offer.changed',
+      offerId: 'o',
+      teamId: null,
+      ownerId: null,
+      at: 1,
+      by: null,
+    } as LeadDeskEvent;
     const f = eventFrame('01ABC', e);
     expect(f.startsWith('id: 01ABC\nevent: offer.changed\ndata: {')).toBe(true);
     expect(f.endsWith('\n\n')).toBe(true);

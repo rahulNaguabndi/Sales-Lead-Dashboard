@@ -1,6 +1,7 @@
 import type { ComponentType } from 'react';
 import type { LeadSlotProps } from './types';
 import { ActivityComposer } from '@/components/leads/composer';
+import { UpdatedByNote } from '@/components/live/UpdatedByNote';
 
 export type LeadSlotName =
   | 'composer'
@@ -9,7 +10,8 @@ export type LeadSlotName =
   | 'offers'
   | 'ai'
   | 'customerExtras'
-  | 'headerActions';
+  | 'headerActions'
+  | 'liveNote';
 
 export type LeadSlots = Record<LeadSlotName, ComponentType<LeadSlotProps> | null>;
 
@@ -26,4 +28,5 @@ export const leadSlots: LeadSlots = {
   ai: null,
   customerExtras: null,
   headerActions: null,
+  liveNote: UpdatedByNote as ComponentType<LeadSlotProps>,
 };

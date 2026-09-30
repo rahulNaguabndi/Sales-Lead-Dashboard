@@ -109,7 +109,8 @@ export function createHub(deps: HubDeps) {
       const idx = buffer.findIndex((b) => b.id === opts.lastEventId);
       if (idx === -1) safeWrite(c, resyncFrame());
       else
-        for (const b of buffer.slice(idx + 1)) if (c.test(b.event)) safeWrite(c, eventFrame(b.id, b.event));
+        for (const b of buffer.slice(idx + 1))
+          if (c.test(b.event)) safeWrite(c, eventFrame(b.id, b.event));
     }
 
     c.timers.push(setInterval(() => safeWrite(c, PING_FRAME), HEARTBEAT_MS));
