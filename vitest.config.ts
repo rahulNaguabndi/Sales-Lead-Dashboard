@@ -3,7 +3,10 @@ import { defineConfig } from 'vitest/config';
 
 export default defineConfig({
   resolve: {
-    alias: { '@leaddesk/shared': path.resolve(__dirname, 'packages/shared/src/index.ts') },
+    alias: {
+      '@leaddesk/shared': path.resolve(__dirname, 'packages/shared/src/index.ts'),
+      '@': path.resolve(__dirname, 'apps/web'),
+    },
   },
   test: {
     environment: 'node',
