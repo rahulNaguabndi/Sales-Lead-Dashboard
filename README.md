@@ -21,4 +21,6 @@ npm run db:reset      # migrate + deterministic seed
 npm run dev           # web :3000, showroom :3001
 npm run simulate      # optional: stream demo leads
 ```
+If `npm install` fails with a certificate error (for example behind a corporate proxy), set `NODE_USE_SYSTEM_CA=1` first (`setx NODE_USE_SYSTEM_CA 1` on Windows, then open a new terminal). Copy `apps/web/.env.example` to `apps/web/.env` before running `dev` or e2e.
+
 Demo users: `isabelle.laurent@eurodrive.test` (VP), `lukas.becker@eurodrive.test` (Manager), `sofia.rossi@eurodrive.test` (Rep). Password: `demo1234`.
