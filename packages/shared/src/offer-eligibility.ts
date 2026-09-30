@@ -24,8 +24,7 @@ export const OfferEligibilitySchema = z
   .strict();
 export type OfferEligibilityRules = z.infer<typeof OfferEligibilitySchema>;
 
-/** Body of POST /api/offers (and the base of PATCH). */
-export const OfferInputSchema = z
+const OfferBaseSchema = z
   .object({
     title: z.string().trim().min(3).max(80),
     description: z.string().trim().max(300).default(''),
@@ -36,8 +35,10 @@ export const OfferInputSchema = z
     eligibility: OfferEligibilitySchema.default({}),
     isActive: z.boolean().default(true),
   })
-  .strict()
-  .superRefine((o, ctx) => {
+  .strict();
+
+/** Body of POST /api/offers. */
+export const OfferInputSchema = OfferBaseSchema.superRefine((o, ctx) => {
     checkValue(o.discountType, o.value ?? null, (message) =>
       ctx.addIssue({ code: 'custom', path: ['value'], message }),
     );
@@ -45,6 +46,12 @@ export const OfferInputSchema = z
       ctx.addIssue({ code: 'custom', path: ['validTo'], message: 'Must not be before start' });
   });
 export type OfferInput = z.infer<typeof OfferInputSchema>;
+
+/** Body of PATCH /api/offers/:id: any subset of fields; the merged offer is re-validated by the service. */
+export const OfferPatchSchema = OfferBaseSchema.partial().refine((o) => Object.keys(o).length > 0, {
+  message: 'Provide at least one field',
+});
+export type OfferPatchInput = z.infer<typeof OfferPatchSchema>;
 
 /** Shared value rule, also reused by PATCH validation of the merged offer. */
 export function checkValue(
