@@ -89,7 +89,7 @@ const input = (over: Record<string, unknown> = {}) => ({
   value: 150_000,
   validFrom: now - DAY,
   validTo: now + 30 * DAY,
-  eligibility: { requiresTradeIn: true },
+  eligibility: { requiresTradeIn: true as const },
   isActive: true,
   ...over,
 });

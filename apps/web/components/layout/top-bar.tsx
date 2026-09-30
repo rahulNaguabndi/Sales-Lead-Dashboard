@@ -4,6 +4,7 @@ import type { Role } from '@leaddesk/shared';
 import { UserMenu } from './user-menu';
 import { LiveStatusDot } from '@/components/live/LiveStatusDot';
 import { Input } from '@/components/ui/input';
+import { OffersStrip } from '@/components/offers/OffersStrip';
 
 export function TopBar({
   user,
@@ -25,7 +26,9 @@ export function TopBar({
       </div>
       <div className="flex items-center gap-3">
         {/* Mount points: F15 offers strip, F12 live indicator, F02 user menu. */}
-        <div data-slot="offers-strip" />
+        <div data-slot="offers-strip">
+          <OffersStrip />
+        </div>
         <div data-slot="live-dot">
           <LiveStatusDot />
         </div>

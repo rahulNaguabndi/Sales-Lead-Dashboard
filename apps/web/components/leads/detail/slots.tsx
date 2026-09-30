@@ -2,6 +2,7 @@ import type { ComponentType } from 'react';
 import type { LeadSlotProps } from './types';
 import { ActivityComposer } from '@/components/leads/composer';
 import { UpdatedByNote } from '@/components/live/UpdatedByNote';
+import { OffersPanel } from '@/components/offers/OffersPanel';
 
 export type LeadSlotName =
   | 'composer'
@@ -24,7 +25,7 @@ export const leadSlots: LeadSlots = {
   composer: ActivityComposer as ComponentType<LeadSlotProps>,
   channels: null,
   followUps: null,
-  offers: null,
+  offers: OffersPanel as ComponentType<LeadSlotProps>,
   ai: null,
   customerExtras: null,
   headerActions: null,

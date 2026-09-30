@@ -39,12 +39,12 @@ const OfferBaseSchema = z
 
 /** Body of POST /api/offers. */
 export const OfferInputSchema = OfferBaseSchema.superRefine((o, ctx) => {
-    checkValue(o.discountType, o.value ?? null, (message) =>
-      ctx.addIssue({ code: 'custom', path: ['value'], message }),
-    );
-    if (o.validTo < o.validFrom)
-      ctx.addIssue({ code: 'custom', path: ['validTo'], message: 'Must not be before start' });
-  });
+  checkValue(o.discountType, o.value ?? null, (message) =>
+    ctx.addIssue({ code: 'custom', path: ['value'], message }),
+  );
+  if (o.validTo < o.validFrom)
+    ctx.addIssue({ code: 'custom', path: ['validTo'], message: 'Must not be before start' });
+});
 export type OfferInput = z.infer<typeof OfferInputSchema>;
 
 /** Body of PATCH /api/offers/:id: any subset of fields; the merged offer is re-validated by the service. */
@@ -106,8 +106,8 @@ export function formatOfferValue(
   if (o.discountType === 'GIFT') return o.description;
   if (o.value === null) return '';
   if (o.discountType === 'AMOUNT') return formatEUR(o.value);
-  if (o.discountType === 'PERCENT') return `${nf.format(o.value)} %`;
-  return `${nf.format(o.value / 100)} % APR`;
+  if (o.discountType === 'PERCENT') return `${nf.format(o.value)}\u00a0%`;
+  return `${nf.format(o.value / 100)}\u00a0% APR`;
 }
 
 function brusselsOffsetMs(instant: number): number {
