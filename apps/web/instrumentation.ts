@@ -8,5 +8,7 @@ export async function register() {
     getRedis();
     // Give the first connection attempt a moment so the status line is meaningful.
     setTimeout(() => console.info(`Redis: ${redisStatus()}`), 1500).unref?.();
+    const { startJobs } = await import('./server/jobs');
+    startJobs();
   }
 }
