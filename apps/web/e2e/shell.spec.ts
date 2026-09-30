@@ -21,9 +21,10 @@ test('app shell shows the role-aware navigation rail and top bar', async ({ page
   await expect(page.getByText(/\d+ leads loaded/)).toBeVisible();
 });
 
-test('activities route is stubbed with 501 until F05/F06', async ({ request }) => {
+test('activities route is live (F05): unknown lead ids return 404', async ({ request }) => {
   await signIn(request);
   const res = await request.get('/api/leads/any/activities');
-  expect(res.status()).toBe(501);
-  expect((await res.json()).error.code).toBe('NOT_IMPLEMENTED');
+  expect(res.status()).toBe(404);
+  expect((await res.json()).error.code).toBe('NOT_FOUND');
 });
+
