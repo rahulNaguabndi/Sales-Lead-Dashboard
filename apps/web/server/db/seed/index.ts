@@ -45,7 +45,9 @@ export function seedDatabase(db: Db, opts: SeedOptions = {}): SeedSummary {
 
   const existing = db.select({ n: count() }).from(schema.users).get()?.n ?? 0;
   if (existing > 0) {
-    throw new Error('Database is not empty (append-only tables cannot be cleared). Run npm run db:reset.');
+    throw new Error(
+      'Database is not empty (append-only tables cannot be cleared). Run npm run db:reset.',
+    );
   }
 
   const org = seedOrg();
@@ -60,11 +62,15 @@ export function seedDatabase(db: Db, opts: SeedOptions = {}): SeedSummary {
   const { felixNeglected } = rebalanceDach(plans, org);
   const scenario = planScenarioLeads(ctx, felixNeglected);
   const heroLeads = planHeroLeads(org, hero.giulia, hero.markus);
-  const allPlans = [...plans, ...scenario.plans, ...heroLeads.plans].sort((a, b) => a.createdAt - b.createdAt);
+  const allPlans = [...plans, ...scenario.plans, ...heroLeads.plans].sort(
+    (a, b) => a.createdAt - b.createdAt,
+  );
   const forceHot = new Set([...scenario.forceHot, ...heroLeads.forceHot]);
 
   // References are assigned in creation order because leads are built oldest-first.
-  const built: BuiltLead[] = allPlans.map((p, i) => rng.withSeed(seed * 1_000_003 + i, () => buildLead(p, offers)));
+  const built: BuiltLead[] = allPlans.map((p, i) =>
+    rng.withSeed(seed * 1_000_003 + i, () => buildLead(p, offers)),
+  );
 
   // Customers exist from their first lead (or purchase) onwards.
   const firstLead = new Map<string, number>();
@@ -74,14 +80,21 @@ export function seedDatabase(db: Db, opts: SeedOptions = {}): SeedSummary {
     if (cur === undefined || t < cur) firstLead.set(b.lead.customerId as string, t);
   }
   const purchaseAt = new Map<string, number>();
-  for (const p of purchases) purchaseAt.set(p.customerId, Math.min(purchaseAt.get(p.customerId) ?? Infinity, p.purchasedAt));
+  for (const p of purchases)
+    purchaseAt.set(p.customerId, Math.min(purchaseAt.get(p.customerId) ?? Infinity, p.purchasedAt));
   for (const c of customers) {
     const lead = firstLead.get(c.id);
     const bought = purchaseAt.get(c.id);
-    c.createdAt = Math.min(lead !== undefined ? lead - 5 * MINUTE : clock.now - 5 * DAY, bought ?? Infinity);
+    c.createdAt = Math.min(
+      lead !== undefined ? lead - 5 * MINUTE : clock.now - 5 * DAY,
+      bought ?? Infinity,
+    );
   }
 
-  const followUps: FollowUpRow[] = [...planFollowUps(built), ...built.flatMap((b) => (b.doneFollowUp ? [b.doneFollowUp] : []))];
+  const followUps: FollowUpRow[] = [
+    ...planFollowUps(built),
+    ...built.flatMap((b) => (b.doneFollowUp ? [b.doneFollowUp] : [])),
+  ];
   for (const b of built) if (b.purchase) purchases.push(b.purchase);
 
   db.transaction((tx) => {
@@ -89,9 +102,22 @@ export function seedDatabase(db: Db, opts: SeedOptions = {}): SeedSummary {
     tx.insert(schema.users).values(org.users).run();
     chunked(customers, 100, (c) => tx.insert(schema.customers).values(c).run());
     tx.insert(schema.offers).values(offers).run();
-    chunked(built, 50, (c) => tx.insert(schema.leads).values(c.map((b) => b.lead)).run());
-    chunked(built.flatMap((b) => b.activities), 500, (c) => tx.insert(schema.activities).values(c).run());
-    chunked(built.flatMap((b) => b.history), 500, (c) => tx.insert(schema.stageHistory).values(c).run());
+    chunked(built, 50, (c) =>
+      tx
+        .insert(schema.leads)
+        .values(c.map((b) => b.lead))
+        .run(),
+    );
+    chunked(
+      built.flatMap((b) => b.activities),
+      500,
+      (c) => tx.insert(schema.activities).values(c).run(),
+    );
+    chunked(
+      built.flatMap((b) => b.history),
+      500,
+      (c) => tx.insert(schema.stageHistory).values(c).run(),
+    );
     chunked(followUps, 200, (c) => tx.insert(schema.followUps).values(c).run());
     chunked(purchases, 200, (c) => tx.insert(schema.purchases).values(c).run());
     scoreLeads(tx, undefined, forceHot);
@@ -118,7 +144,11 @@ function summarize(db: Db, seed: number, ms: number): SeedSummary {
     tables[name] = n(db.select({ n: count() }).from(table).get());
   }
   const stages: Record<string, number> = {};
-  for (const r of db.select({ stage: schema.leads.stage, n: count() }).from(schema.leads).groupBy(schema.leads.stage).all()) {
+  for (const r of db
+    .select({ stage: schema.leads.stage, n: count() })
+    .from(schema.leads)
+    .groupBy(schema.leads.stage)
+    .all()) {
     stages[r.stage] = r.n;
   }
   const teams: Record<string, number> = {};
@@ -130,7 +160,9 @@ function summarize(db: Db, seed: number, ms: number): SeedSummary {
     .all()) {
     teams[r.name] = r.n;
   }
-  const unassigned = n(db.select({ n: count() }).from(schema.leads).where(isNull(schema.leads.ownerId)).get());
+  const unassigned = n(
+    db.select({ n: count() }).from(schema.leads).where(isNull(schema.leads.ownerId)).get(),
+  );
   const slaBreaches = n(
     db
       .select({ n: count() })

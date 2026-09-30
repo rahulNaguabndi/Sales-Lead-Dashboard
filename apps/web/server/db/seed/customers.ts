@@ -85,7 +85,15 @@ const AGE_RANGE: Record<Exclude<AgeBand, 'UNKNOWN'>, [number, number]> = {
   '60+': [61, 85],
 };
 
-const EMAIL_DOMAINS = ['gmail.com', 'outlook.com', 'gmx.net', 'web.de', 'orange.fr', 'libero.it', 'proton.me'];
+const EMAIL_DOMAINS = [
+  'gmail.com',
+  'outlook.com',
+  'gmx.net',
+  'web.de',
+  'orange.fr',
+  'libero.it',
+  'proton.me',
+];
 
 export type CustomersResult = {
   customers: CustomerRow[];
@@ -94,7 +102,9 @@ export type CustomersResult = {
 };
 
 function slug(s: string): string {
-  return stripDiacritics(s).toLowerCase().replace(/[^a-z0-9]/g, '');
+  return stripDiacritics(s)
+    .toLowerCase()
+    .replace(/[^a-z0-9]/g, '');
 }
 
 export function seedCustomers(count = 600): CustomersResult {
@@ -162,7 +172,10 @@ export function seedCustomers(count = 600): CustomersResult {
       secondaryChannel: rng.chance(0.5)
         ? rng.pick(CHANNEL_ORDER.filter((c) => c !== preferredChannel))
         : null,
-      bestTime: rng.weightedPick(['MORNING', 'AFTERNOON', 'EVENING', 'ANYTIME'] as const, [25, 25, 30, 20]),
+      bestTime: rng.weightedPick(
+        ['MORNING', 'AFTERNOON', 'EVENING', 'ANYTIME'] as const,
+        [25, 25, 30, 20],
+      ),
       isReturning: false,
       marketingConsent: rng.chance(0.4),
       searchText: buildCustomerSearchText({ firstName, lastName, email, phone }),
@@ -192,9 +205,17 @@ export function seedCustomers(count = 600): CustomersResult {
 }
 
 /** The two demo "hero" customers used by the guided demo (FR-037). */
-export function seedHeroCustomers(): { giulia: CustomerRow; markus: CustomerRow; purchase: PurchaseRow } {
+export function seedHeroCustomers(): {
+  giulia: CustomerRow;
+  markus: CustomerRow;
+  purchase: PurchaseRow;
+} {
   const now = clock.now;
-  const make = (c: Omit<CustomerRow, 'id' | 'searchText' | 'createdAt' | 'isReturning'> & { isReturning?: boolean }) => {
+  const make = (
+    c: Omit<CustomerRow, 'id' | 'searchText' | 'createdAt' | 'isReturning'> & {
+      isReturning?: boolean;
+    },
+  ) => {
     const customer: CustomerRow = {
       ...c,
       id: newId(now - 30 * DAY),

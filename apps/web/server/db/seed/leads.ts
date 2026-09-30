@@ -54,8 +54,14 @@ const AGE_WEIGHTS: { maxDays: number; weights: number[] }[] = [
   { maxDays: Infinity, weights: [0, 2, 2, 1, 1, 20, 48, 26] },
 ];
 
-export function pickStage(ageDays: number, source: LeadSource, repId: string | null, repFactor: Record<string, number>): Stage {
-  const bucket = AGE_WEIGHTS.find((b) => ageDays < b.maxDays) ?? AGE_WEIGHTS[AGE_WEIGHTS.length - 1];
+export function pickStage(
+  ageDays: number,
+  source: LeadSource,
+  repId: string | null,
+  repFactor: Record<string, number>,
+): Stage {
+  const bucket =
+    AGE_WEIGHTS.find((b) => ageDays < b.maxDays) ?? AGE_WEIGHTS[AGE_WEIGHTS.length - 1];
   const weights = [...(bucket?.weights ?? [])];
   const mult = SOURCE_CONVERSION[source] * (repId ? (repFactor[repId] ?? 1) : 1);
   weights[5] = (weights[5] ?? 0) * mult;
@@ -74,7 +80,13 @@ const MESSAGES = [
 
 export type VehiclePrefs = Pick<
   LeadPlan,
-  'vehicleModel' | 'budgetMin' | 'budgetMax' | 'hasTradeIn' | 'wantsFinance' | 'testDriveRequested' | 'message'
+  | 'vehicleModel'
+  | 'budgetMin'
+  | 'budgetMax'
+  | 'hasTradeIn'
+  | 'wantsFinance'
+  | 'testDriveRequested'
+  | 'message'
 >;
 
 export function randomPrefs(): VehiclePrefs {
@@ -102,12 +114,20 @@ export function randomSource(): { source: LeadSource; sourceDetail: string | nul
     SOURCES.map(([s]) => s),
     SOURCES.map(([, w]) => w),
   );
-  return { source, sourceDetail: source === 'PORTAL' ? rng.pick(['mobile.de', 'AutoScout24']) : null };
+  return {
+    source,
+    sourceDetail: source === 'PORTAL' ? rng.pick(['mobile.de', 'AutoScout24']) : null,
+  };
 }
 
 /** Team by the customer's country (FR-034); PL/IE/DK round-robin across the three teams. */
-export function teamForCustomer(customer: CustomerRow, org: OrgResult, state: { rr: number }): string {
-  const region = (COUNTRIES as Record<string, { region: TeamRegion | null }>)[customer.country]?.region;
+export function teamForCustomer(
+  customer: CustomerRow,
+  org: OrgResult,
+  state: { rr: number },
+): string {
+  const region = (COUNTRIES as Record<string, { region: TeamRegion | null }>)[customer.country]
+    ?.region;
   if (region) return org.teamByRegion[region] as string;
   const regions = Object.keys(org.teamByRegion);
   return org.teamByRegion[regions[state.rr++ % regions.length] as string] as string;

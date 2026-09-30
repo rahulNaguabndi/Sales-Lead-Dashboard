@@ -16,11 +16,16 @@ type Ctx = {
 
 function customersIn(customers: CustomerRow[], region: TeamRegion): CustomerRow[] {
   return customers.filter(
-    (c) => (COUNTRIES as Record<string, { region: TeamRegion | null }>)[c.country]?.region === region,
+    (c) =>
+      (COUNTRIES as Record<string, { region: TeamRegion | null }>)[c.country]?.region === region,
   );
 }
 
-function scenarioPlan(ctx: Ctx, customer: CustomerRow, o: Partial<LeadPlan> & Pick<LeadPlan, 'createdAt' | 'stage'>): LeadPlan {
+function scenarioPlan(
+  ctx: Ctx,
+  customer: CustomerRow,
+  o: Partial<LeadPlan> & Pick<LeadPlan, 'createdAt' | 'stage'>,
+): LeadPlan {
   const teamId = teamForCustomer(customer, ctx.org, ctx.rr);
   const { source, sourceDetail } = randomSource();
   return {
@@ -42,17 +47,32 @@ export function rebalanceDach(plans: LeadPlan[], org: OrgResult): { felixNeglect
   const felix = org.repIdByName['Felix Wagner'] as string;
   const lea = org.repIdByName['Lea Hoffmann'] as string;
   const others = (org.repsByTeam[dach] ?? []).filter((id) => id !== felix && id !== lea);
-  const openOf = (id: string) => plans.filter((p) => p.teamId === dach && p.ownerId === id && isOpen(p.stage));
+  const openOf = (id: string) =>
+    plans.filter((p) => p.teamId === dach && p.ownerId === id && isOpen(p.stage));
   const movable = (excl: string[]) =>
-    plans.filter((p) => p.movable && p.teamId === dach && p.stage !== 'NEW' && isOpen(p.stage) && p.ownerId && !excl.includes(p.ownerId));
+    plans.filter(
+      (p) =>
+        p.movable &&
+        p.teamId === dach &&
+        p.stage !== 'NEW' &&
+        isOpen(p.stage) &&
+        p.ownerId &&
+        !excl.includes(p.ownerId),
+    );
 
-  for (const p of openOf(lea).filter((p) => p.movable).slice(15)) p.ownerId = rng.pick(others);
+  for (const p of openOf(lea)
+    .filter((p) => p.movable)
+    .slice(15))
+    p.ownerId = rng.pick(others);
   while (openOf(felix).length < 38) {
     const pool = movable([felix]);
     if (pool.length === 0) break;
     (rng.pick(pool) as LeadPlan).ownerId = felix;
   }
-  for (const p of openOf(felix).filter((p) => p.movable).slice(38)) p.ownerId = rng.pick(others);
+  for (const p of openOf(felix)
+    .filter((p) => p.movable)
+    .slice(38))
+    p.ownerId = rng.pick(others);
 
   const now = clock.now;
   const felixOpen = openOf(felix);
@@ -68,7 +88,9 @@ export function rebalanceDach(plans: LeadPlan[], org: OrgResult): { felixNeglect
     }
     if (p.createdAt > p.endAt - 2 * DAY) p.createdAt = p.endAt - rng.float(2, 15) * DAY;
   });
-  neglected = workable.filter((p) => p.endAt !== undefined && now - p.endAt >= 3 * DAY).length + felixOpen.filter((p) => p.stage === 'NEW').length;
+  neglected =
+    workable.filter((p) => p.endAt !== undefined && now - p.endAt >= 3 * DAY).length +
+    felixOpen.filter((p) => p.stage === 'NEW').length;
   return { felixNeglected: neglected };
 }
 
@@ -79,11 +101,15 @@ export function planScenarioLeads(ctx: Ctx, felixNeglected: number): ScenarioRes
   const now = clock.now;
   const plans: LeadPlan[] = [];
   const forceHot = new Set<string>();
-  const { org, customers } = ctx;
+  const { customers } = ctx;
   const regionNames: TeamRegion[] = ['DACH', 'WEST', 'SOUTH'];
 
   // 1. 25 unassigned leads created within the last 48 hours (DACH 10, West 8, South 7).
-  for (const [region, count] of [['DACH', 10], ['WEST', 8], ['SOUTH', 7]] as [TeamRegion, number][]) {
+  for (const [region, count] of [
+    ['DACH', 10],
+    ['WEST', 8],
+    ['SOUTH', 7],
+  ] as [TeamRegion, number][]) {
     const pool = customersIn(customers, region);
     for (let i = 0; i < count; i++) {
       plans.push(
@@ -114,7 +140,11 @@ export function planScenarioLeads(ctx: Ctx, felixNeglected: number): ScenarioRes
   }
 
   // 3. At-risk leads: open, last activity 3-6 days ago (Felix's neglected leads already count).
-  const pickOpen = () => rng.weightedPick(['CONTACTED', 'QUALIFIED', 'TEST_DRIVE', 'NEGOTIATION'] as Stage[], [40, 30, 20, 10]);
+  const pickOpen = () =>
+    rng.weightedPick(
+      ['CONTACTED', 'QUALIFIED', 'TEST_DRIVE', 'NEGOTIATION'] as Stage[],
+      [40, 30, 20, 10],
+    );
   for (let i = 0; i < Math.max(0, 20 - felixNeglected); i++) {
     const endAt = now - 3 * DAY - rng.float(2, 70) * HOUR;
     plans.push(
@@ -166,7 +196,8 @@ export function planHeroLeads(
     hasTradeIn: true,
     wantsFinance: true,
     testDriveRequested: true,
-    message: 'Buongiorno, sono interessata alla Aurora SUV. Ho un’auto da permutare e vorrei provarla sabato.',
+    message:
+      'Buongiorno, sono interessata alla Aurora SUV. Ho un’auto da permutare e vorrei provarla sabato.',
     movable: false,
     endAt: now - 3 * HOUR,
     activityCount: 3,
@@ -206,14 +237,22 @@ export function planFollowUps(built: BuiltLead[]): FollowUpRow[] {
   );
   const out: FollowUpRow[] = [];
   const mk = (b: BuiltLead, dueAt: number): FollowUpRow => {
-    const createdAt = Math.max(b.lead.createdAt as number, Math.min(dueAt - rng.float(0.5, 4) * DAY, now - MINUTE));
+    const createdAt = Math.max(
+      b.lead.createdAt as number,
+      Math.min(dueAt - rng.float(0.5, 4) * DAY, now - MINUTE),
+    );
     return {
       id: newId(createdAt),
       leadId: b.lead.id as string,
       assignedTo: b.lead.ownerId as string,
       dueAt: Math.round(dueAt),
       status: 'PENDING',
-      note: rng.pick(['Call back about the quote', 'Check test drive availability', 'Send financing options', 'Confirm appointment']),
+      note: rng.pick([
+        'Call back about the quote',
+        'Check test drive availability',
+        'Send financing options',
+        'Confirm appointment',
+      ]),
       createdBy: b.lead.ownerId as string,
       createdAt: Math.round(createdAt),
       completedAt: null,
@@ -221,9 +260,12 @@ export function planFollowUps(built: BuiltLead[]): FollowUpRow[] {
     };
   };
   let i = 0;
-  for (let n = 0; n < 30 && i < pool.length; n++) out.push(mk(pool[i++] as BuiltLead, now - rng.float(1 * HOUR, 3 * DAY)));
+  for (let n = 0; n < 30 && i < pool.length; n++)
+    out.push(mk(pool[i++] as BuiltLead, now - rng.float(1 * HOUR, 3 * DAY)));
   const todayHi = Math.max(endOfDay, now + 30 * MINUTE);
-  for (let n = 0; n < 20 && i < pool.length; n++) out.push(mk(pool[i++] as BuiltLead, rng.float(now + MINUTE, todayHi)));
-  for (let n = 0; n < 40 && i < pool.length; n++) out.push(mk(pool[i++] as BuiltLead, rng.float(todayHi + HOUR, now + 7 * DAY)));
+  for (let n = 0; n < 20 && i < pool.length; n++)
+    out.push(mk(pool[i++] as BuiltLead, rng.float(now + MINUTE, todayHi)));
+  for (let n = 0; n < 40 && i < pool.length; n++)
+    out.push(mk(pool[i++] as BuiltLead, rng.float(todayHi + HOUR, now + 7 * DAY)));
   return out;
 }

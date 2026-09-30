@@ -6,7 +6,19 @@ module.exports = {
   env: { node: true, es2022: true, browser: true },
   rules: {
     'react-hooks/rules-of-hooks': 'error',
-    '@typescript-eslint/no-unused-vars': ['error', { argsIgnorePattern: '^_', varsIgnorePattern: '^_' }],
+    '@typescript-eslint/no-unused-vars': [
+      'error',
+      { argsIgnorePattern: '^_', varsIgnorePattern: '^_' },
+    ],
   },
-  ignorePatterns: ['node_modules/', '.next/', 'dist/', 'data/', 'playwright-report/', 'test-results/', 'next-env.d.ts', 'components/ui/'],
+  ignorePatterns: [
+    'node_modules/',
+    '.next/',
+    'dist/',
+    'data/',
+    'playwright-report/',
+    'test-results/',
+    'next-env.d.ts',
+    'components/ui/',
+  ],
 };

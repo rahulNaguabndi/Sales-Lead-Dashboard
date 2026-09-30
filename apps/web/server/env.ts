@@ -21,7 +21,7 @@ const EnvSchema = z.object({
 export type Env = z.infer<typeof EnvSchema>;
 
 /** Throws a readable error listing every missing/invalid variable (FR-004). */
-export function validateEnv(source: NodeJS.ProcessEnv = process.env): Env {
+export function validateEnv(source: Record<string, string | undefined> = process.env): Env {
   // Treat empty strings (e.g. "ANTHROPIC_API_KEY=") as unset.
   const cleaned = Object.fromEntries(Object.entries(source).filter(([, v]) => v !== ''));
   const result = EnvSchema.safeParse(cleaned);

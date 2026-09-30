@@ -58,7 +58,10 @@ describe('seed', () => {
     };
     for (const [stage, pct] of Object.entries(targets)) {
       const actual = ((a.summary.stages[stage] ?? 0) / total) * 100;
-      expect(Math.abs(actual - pct), `${stage}: ${actual.toFixed(1)}% vs ${pct}%`).toBeLessThanOrEqual(4);
+      expect(
+        Math.abs(actual - pct),
+        `${stage}: ${actual.toFixed(1)}% vs ${pct}%`,
+      ).toBeLessThanOrEqual(4);
     }
     const won = a.summary.stages.WON ?? 0;
     const lost = a.summary.stages.LOST ?? 0;
@@ -82,9 +85,17 @@ describe('seed', () => {
   });
 
   it('has at least 30 overdue pending follow-ups, 20 due today and 40 later', () => {
-    const overdue = one<{ n: number }>(a.sqlite, "SELECT COUNT(*) n FROM follow_ups WHERE status='PENDING' AND due_at < ?", NOW);
+    const overdue = one<{ n: number }>(
+      a.sqlite,
+      "SELECT COUNT(*) n FROM follow_ups WHERE status='PENDING' AND due_at < ?",
+      NOW,
+    );
     expect(overdue.n).toBeGreaterThanOrEqual(30);
-    const future = one<{ n: number }>(a.sqlite, "SELECT COUNT(*) n FROM follow_ups WHERE status='PENDING' AND due_at >= ?", NOW);
+    const future = one<{ n: number }>(
+      a.sqlite,
+      "SELECT COUNT(*) n FROM follow_ups WHERE status='PENDING' AND due_at >= ?",
+      NOW,
+    );
     expect(future.n).toBeGreaterThanOrEqual(60);
   });
 

@@ -38,7 +38,11 @@ function create(slot: Slot, label: string): Redis {
   };
 
   const connect = () => {
-    if (client.status === 'ready' || client.status === 'connecting' || client.status === 'connect') {
+    if (
+      client.status === 'ready' ||
+      client.status === 'connecting' ||
+      client.status === 'connect'
+    ) {
       return;
     }
     client.connect().catch((err: Error) => degrade(err));

@@ -130,5 +130,14 @@ export function seedOrg(): OrgResult {
   }
   void rng; // org is fully deterministic from the org chart; rng is reserved for future use
 
-  return { teams, users, teamByRegion, vpId: vp.id, managerIds, repsByTeam, repIdByName, repFactor };
+  return {
+    teams,
+    users,
+    teamByRegion,
+    vpId: vp.id,
+    managerIds,
+    repsByTeam,
+    repIdByName,
+    repFactor,
+  };
 }

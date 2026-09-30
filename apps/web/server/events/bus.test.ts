@@ -28,7 +28,9 @@ describe('event bus (memory mode)', () => {
     const off = bus.subscribe(() => {
       throw new Error('boom');
     });
-    await expect(bus.publish({ type: 'nope' } as unknown as LeadDeskEvent)).resolves.toBeUndefined();
+    await expect(
+      bus.publish({ type: 'nope' } as unknown as LeadDeskEvent),
+    ).resolves.toBeUndefined();
     off();
   });
 

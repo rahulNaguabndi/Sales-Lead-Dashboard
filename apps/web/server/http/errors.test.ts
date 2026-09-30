@@ -4,9 +4,7 @@ import { NotFoundError, ValidationError, toErrorResponse } from './errors';
 
 describe('toErrorResponse', () => {
   it('maps ValidationError to 400 with fields', () => {
-    expect(
-      toErrorResponse(new ValidationError('bad', { fields: { email: 'invalid' } })),
-    ).toEqual({
+    expect(toErrorResponse(new ValidationError('bad', { fields: { email: 'invalid' } }))).toEqual({
       status: 400,
       body: { error: { code: 'VALIDATION_ERROR', message: 'bad', fields: { email: 'invalid' } } },
     });

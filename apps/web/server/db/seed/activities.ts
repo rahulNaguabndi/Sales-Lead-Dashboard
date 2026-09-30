@@ -2,7 +2,6 @@ import {
   VEHICLES,
   isContactActivity,
   type ActivityType,
-  type Channel,
   type LostReason,
   type Outcome,
   type Stage,
@@ -42,7 +41,6 @@ const ACTIVITY_COUNT: Record<Stage, [number, number]> = {
   COLD: [3, 8],
 };
 
-const MESSAGING: Channel[] = ['WHATSAPP', 'SMS', 'EMAIL'];
 const CONTACT_TYPES: ActivityType[] = ['CALL', 'WHATSAPP', 'SMS', 'EMAIL'];
 
 function stagePath(stage: Stage): Stage[] {
@@ -76,7 +74,14 @@ function pickOutcome(type: ActivityType): Outcome | null {
   switch (type) {
     case 'CALL':
       return rng.weightedPick(
-        ['NO_ANSWER', 'VOICEMAIL', 'CONNECTED', 'INTERESTED', 'CALLBACK_REQUESTED', 'NOT_INTERESTED'] as Outcome[],
+        [
+          'NO_ANSWER',
+          'VOICEMAIL',
+          'CONNECTED',
+          'INTERESTED',
+          'CALLBACK_REQUESTED',
+          'NOT_INTERESTED',
+        ] as Outcome[],
         [22, 12, 34, 18, 8, 6],
       );
     case 'WHATSAPP':
@@ -95,13 +100,29 @@ function pickOutcome(type: ActivityType): Outcome | null {
 }
 
 const NOTE_TEXT: Record<string, string[]> = {
-  CALL: ['Called the customer.', 'Phone conversation about the vehicle.', 'Discussed pricing over the phone.'],
-  WHATSAPP: ['Sent WhatsApp message.', 'Shared brochure via WhatsApp.', 'WhatsApp chat about availability.'],
+  CALL: [
+    'Called the customer.',
+    'Phone conversation about the vehicle.',
+    'Discussed pricing over the phone.',
+  ],
+  WHATSAPP: [
+    'Sent WhatsApp message.',
+    'Shared brochure via WhatsApp.',
+    'WhatsApp chat about availability.',
+  ],
   SMS: ['Sent SMS with dealership details.', 'SMS reminder about appointment.'],
-  EMAIL: ['Emailed the quote.', 'Sent follow-up email with options.', 'Email exchange about financing.'],
+  EMAIL: [
+    'Emailed the quote.',
+    'Sent follow-up email with options.',
+    'Email exchange about financing.',
+  ],
   MEETING: ['Met the customer at the showroom.', 'Showroom visit and vehicle walk-around.'],
   TEST_DRIVE: ['Completed the test drive.', 'Test drive done, positive feedback.'],
-  NOTE: ['Customer prefers evenings.', 'Waiting on trade-in valuation.', 'Spouse involved in the decision.'],
+  NOTE: [
+    'Customer prefers evenings.',
+    'Waiting on trade-in valuation.',
+    'Spouse involved in the decision.',
+  ],
 };
 
 function noteFor(type: ActivityType, outcome: Outcome | null): string {
@@ -143,7 +164,11 @@ export function buildLead(plan: LeadPlan, offers: OfferRow[]): BuiltLead {
   const history: StageHistoryRow[] = [];
   let last = -Infinity;
 
-  const add = (row: Omit<ActivityRow, 'id' | 'leadId' | 'createdAt'>, at: number, gap = MINUTE): ActivityRow | null => {
+  const add = (
+    row: Omit<ActivityRow, 'id' | 'leadId' | 'createdAt'>,
+    at: number,
+    gap = MINUTE,
+  ): ActivityRow | null => {
     const ts = Math.round(Math.max(at, last + gap));
     if (ts > now) return null;
     last = ts;
@@ -151,9 +176,24 @@ export function buildLead(plan: LeadPlan, offers: OfferRow[]): BuiltLead {
     acts.push(full);
     return full;
   };
-  const addSystem = (type: ActivityType, at: number, metadata: Record<string, unknown> | null, gap = 1000) =>
-    add({ actorId: null, kind: 'SYSTEM', type, outcome: null, note: '', aiAssisted: false, metadata }, at, gap);
-  const addStage = (from: Stage, to: Stage, at: number, changedBy: string | null, reason: string | null) => {
+  const addSystem = (
+    type: ActivityType,
+    at: number,
+    metadata: Record<string, unknown> | null,
+    gap = 1000,
+  ) =>
+    add(
+      { actorId: null, kind: 'SYSTEM', type, outcome: null, note: '', aiAssisted: false, metadata },
+      at,
+      gap,
+    );
+  const addStage = (
+    from: Stage,
+    to: Stage,
+    at: number,
+    changedBy: string | null,
+    reason: string | null,
+  ) => {
     const a = addSystem(to === 'COLD' ? 'AUTO_COLD' : 'STAGE_CHANGED', at, { from, to });
     if (!a) return null;
     history.push({
@@ -169,12 +209,23 @@ export function buildLead(plan: LeadPlan, offers: OfferRow[]): BuiltLead {
   };
 
   addSystem('LEAD_CREATED', t0, null, 0);
-  history.push({ id: newId(t0), leadId: plan.id, fromStage: null, toStage: 'NEW', changedBy: null, reason: null, changedAt: t0 });
+  history.push({
+    id: newId(t0),
+    leadId: plan.id,
+    fromStage: null,
+    toStage: 'NEW',
+    changedBy: null,
+    reason: null,
+    changedAt: t0,
+  });
 
   let assignedAt: number | null = null;
   if (ownerId) {
     const maxMin = Math.max(2, Math.min(30, (0.4 * (now - t0)) / MINUTE));
-    const a = addSystem('ASSIGNED', t0 + rng.float(1, maxMin) * MINUTE, { toOwnerId: ownerId, method: 'AUTO' });
+    const a = addSystem('ASSIGNED', t0 + rng.float(1, maxMin) * MINUTE, {
+      toOwnerId: ownerId,
+      method: 'AUTO',
+    });
     assignedAt = a?.createdAt ?? null;
   }
 
@@ -190,7 +241,15 @@ export function buildLead(plan: LeadPlan, offers: OfferRow[]): BuiltLead {
   if (plan.stage === 'NEW') {
     if (plan.onlyNote && ownerId) {
       const n = add(
-        { actorId: ownerId, kind: 'USER', type: 'NOTE', outcome: null, note: 'Internal note: checking availability before calling.', aiAssisted: false, metadata: null },
+        {
+          actorId: ownerId,
+          kind: 'USER',
+          type: 'NOTE',
+          outcome: null,
+          note: 'Internal note: checking availability before calling.',
+          aiAssisted: false,
+          metadata: null,
+        },
         t0 + (now - t0) * rng.float(0.5, 0.9),
       );
       if (n) userActs.push(n);
@@ -202,7 +261,14 @@ export function buildLead(plan: LeadPlan, offers: OfferRow[]): BuiltLead {
     const [lo, hi] = ACTIVITY_COUNT[plan.stage];
     const n = Math.min(15, Math.max(3, plan.activityCount ?? rng.int(lo, hi)));
 
-    lostReason = plan.stage === 'LOST' ? (plan.lostReason ?? rng.weightedPick(LOST_REASON_WEIGHTS.map(([r]) => r), LOST_REASON_WEIGHTS.map(([, w]) => w))) : null;
+    lostReason =
+      plan.stage === 'LOST'
+        ? (plan.lostReason ??
+          rng.weightedPick(
+            LOST_REASON_WEIGHTS.map(([r]) => r),
+            LOST_REASON_WEIGHTS.map(([, w]) => w),
+          ))
+        : null;
 
     // Time window of the user activities. An explicit plan.endAt pins the LAST activity exactly
     // (scenarios rely on e.g. "6 days 23 hours ago"), so earlier ones are kept well before it.
@@ -215,24 +281,43 @@ export function buildLead(plan: LeadPlan, offers: OfferRow[]): BuiltLead {
       const hi7 = now - 7 * DAY - 15 * HOUR;
       endAt = plan.endAt ?? t0 + (hi7 - t0) * rng.float(0.3, 1);
     } else {
-      endAt = plan.endAt ?? now - rng.float(0.3, Math.min(60, Math.max(1, (now - t0) / HOUR))) * HOUR;
+      endAt =
+        plan.endAt ?? now - rng.float(0.3, Math.min(60, Math.max(1, (now - t0) / HOUR))) * HOUR;
     }
     if (!exact) {
-      endAt = Math.min(Math.max(endAt, t0 + 30 * MINUTE), now - 2 * HOUR > t0 ? now - 2 * HOUR : now - 1000);
+      endAt = Math.min(
+        Math.max(endAt, t0 + 30 * MINUTE),
+        now - 2 * HOUR > t0 ? now - 2 * HOUR : now - 1000,
+      );
     }
-    firstAt = Math.max(t0 + 5 * MINUTE, Math.min(firstAt, t0 + 0.5 * (endAt - t0), exact ? endAt - 16 * HOUR : Infinity));
+    firstAt = Math.max(
+      t0 + 5 * MINUTE,
+      Math.min(firstAt, t0 + 0.5 * (endAt - t0), exact ? endAt - 16 * HOUR : Infinity),
+    );
     if (exact && firstAt > endAt - 15 * HOUR) exact = false;
-    if (!exact && endAt - firstAt < (n - 1) * 3 * MINUTE) endAt = Math.min(now - 1000, firstAt + (n - 1) * 3 * MINUTE);
+    if (!exact && endAt - firstAt < (n - 1) * 3 * MINUTE)
+      endAt = Math.min(now - 1000, firstAt + (n - 1) * 3 * MINUTE);
 
     const midHi = exact ? endAt - 15 * HOUR : endAt;
-    const mids = Array.from({ length: n - 2 }, () => rng.float(firstAt, midHi)).sort((a, b) => a - b);
+    const mids = Array.from({ length: n - 2 }, () => rng.float(firstAt, midHi)).sort(
+      (a, b) => a - b,
+    );
     const times = [firstAt, ...mids].map((t) => workTime(t));
     times.push(exact ? endAt : workTime(endAt));
 
     const trailingUnanswered =
-      plan.stage === 'COLD' || lostReason === 'UNREACHABLE' ? 3 : !terminal && rng.chance(0.2) ? rng.int(1, 2) : 0;
+      plan.stage === 'COLD' || lostReason === 'UNREACHABLE'
+        ? 3
+        : !terminal && rng.chance(0.2)
+          ? rng.int(1, 2)
+          : 0;
     const reachesTestDrive = path.includes('TEST_DRIVE');
-    const testDriveIdx = reachesTestDrive ? Math.min(n - 2, Math.max(1, Math.floor(((path.indexOf('TEST_DRIVE') + 1) / (path.length + 1)) * n))) : -1;
+    const testDriveIdx = reachesTestDrive
+      ? Math.min(
+          n - 2,
+          Math.max(1, Math.floor(((path.indexOf('TEST_DRIVE') + 1) / (path.length + 1)) * n)),
+        )
+      : -1;
     const stageAt = new Map<number, Stage[]>();
     mid.forEach((s, j) => {
       const idx = Math.min(n - 1, Math.max(1, Math.floor(((j + 1) / (mid.length + 1)) * (n - 1))));
@@ -249,16 +334,34 @@ export function buildLead(plan: LeadPlan, offers: OfferRow[]): BuiltLead {
         if (k === testDriveIdx) type = 'TEST_DRIVE';
         outcome = pickOutcome(type);
         // Keep unanswered attempts out of the middle of an otherwise answered history's tail.
-        if (n - k === trailingUnanswered + 1 && (outcome === 'NO_ANSWER' || outcome === 'VOICEMAIL')) outcome = 'CONNECTED';
+        if (
+          n - k === trailingUnanswered + 1 &&
+          (outcome === 'NO_ANSWER' || outcome === 'VOICEMAIL')
+        )
+          outcome = 'CONNECTED';
       }
       const a = add(
-        { actorId: ownerId, kind: 'USER', type, outcome, note: noteFor(type, outcome), aiAssisted: false, metadata: null },
+        {
+          actorId: ownerId,
+          kind: 'USER',
+          type,
+          outcome,
+          note: noteFor(type, outcome),
+          aiAssisted: false,
+          metadata: null,
+        },
         times[k] as number,
       );
       if (!a) break;
       userActs.push(a);
       if (k === 0) {
-        const t = addStage('NEW', 'CONTACTED', (a.createdAt as number) + 1000, ownerId, 'First contact');
+        const t = addStage(
+          'NEW',
+          'CONTACTED',
+          (a.createdAt as number) + 1000,
+          ownerId,
+          'First contact',
+        );
         if (t) currentStage = 'CONTACTED';
       }
       for (const s of stageAt.get(k) ?? []) {
@@ -271,9 +374,14 @@ export function buildLead(plan: LeadPlan, offers: OfferRow[]): BuiltLead {
     if (plan.stage === 'WON') {
       vehicleModel = vehicleModel ?? rng.pick(VEHICLES).slug;
       const vehicle = VEHICLES.find((v) => v.slug === vehicleModel) ?? VEHICLES[0];
-      const offer = rng.chance(0.3) ? eligibleOffer({ ...plan, vehicleModel }, lastUser, offers) : undefined;
+      const offer = rng.chance(0.3)
+        ? eligibleOffer({ ...plan, vehicleModel }, lastUser, offers)
+        : undefined;
       if (offer) {
-        const oa = addSystem('OFFER_APPLIED', lastUser + 1000, { offerId: offer.id, title: offer.title });
+        const oa = addSystem('OFFER_APPLIED', lastUser + 1000, {
+          offerId: offer.id,
+          title: offer.title,
+        });
         if (oa) appliedOfferId = offer.id as string;
       }
       const t = addStage(currentStage, 'WON', last + 1000, ownerId, 'Deal closed');
@@ -281,7 +389,14 @@ export function buildLead(plan: LeadPlan, offers: OfferRow[]): BuiltLead {
         currentStage = 'WON';
         closedAt = t;
         dealValue = Math.round((vehicle.priceCents * rng.float(0.9, 1.1)) / 100) * 100;
-        purchase = { id: newId(t), customerId: plan.customer.id, leadId: plan.id, vehicleModel: vehicle.slug, amount: dealValue, purchasedAt: t };
+        purchase = {
+          id: newId(t),
+          customerId: plan.customer.id,
+          leadId: plan.id,
+          vehicleModel: vehicle.slug,
+          amount: dealValue,
+          purchasedAt: t,
+        };
       }
     } else if (plan.stage === 'LOST') {
       const t = addStage(currentStage, 'LOST', last + 1000, ownerId, lostReason);
@@ -290,7 +405,13 @@ export function buildLead(plan: LeadPlan, offers: OfferRow[]): BuiltLead {
         closedAt = t;
       }
     } else if (plan.stage === 'COLD') {
-      const t = addStage(currentStage, 'COLD', Math.min(lastUser + 7 * DAY + rng.float(0, 6) * HOUR, now - 1000), null, 'No contact for 7 days');
+      const t = addStage(
+        currentStage,
+        'COLD',
+        Math.min(lastUser + 7 * DAY + rng.float(0, 6) * HOUR, now - 1000),
+        null,
+        'No contact for 7 days',
+      );
       if (t) currentStage = 'COLD';
     }
   }

@@ -83,7 +83,10 @@ export const users = sqliteTable(
     tokenVersion: integer('token_version').notNull().default(0),
     createdAt: ts('created_at').notNull(),
   },
-  (t) => [uniqueIndex('users_email_uq').on(t.email), index('users_manager_idx').on(t.managerId)],
+  (t) => ({
+    users_email_uq: uniqueIndex('users_email_uq').on(t.email),
+    users_manager_idx: index('users_manager_idx').on(t.managerId),
+  }),
 );
 
 export const customers = sqliteTable(
@@ -107,12 +110,15 @@ export const customers = sqliteTable(
     searchText: text('search_text').notNull().default(''),
     createdAt: ts('created_at').notNull(),
   },
-  (t) => [
-    check('customers_contact_chk', sql`${t.email} IS NOT NULL OR ${t.phone} IS NOT NULL`),
-    index('customers_phone_idx').on(t.phone),
-    index('customers_email_idx').on(t.email),
-    index('customers_search_idx').on(t.searchText),
-  ],
+  (t) => ({
+    customers_contact_chk: check(
+      'customers_contact_chk',
+      sql`${t.email} IS NOT NULL OR ${t.phone} IS NOT NULL`,
+    ),
+    customers_phone_idx: index('customers_phone_idx').on(t.phone),
+    customers_email_idx: index('customers_email_idx').on(t.email),
+    customers_search_idx: index('customers_search_idx').on(t.searchText),
+  }),
 );
 
 // offers is declared before leads because leads.applied_offer_id references it.
@@ -169,16 +175,19 @@ export const leads = sqliteTable(
     updatedAt: ts('updated_at').notNull(),
     version: integer('version').notNull().default(0),
   },
-  (t) => [
-    uniqueIndex('leads_reference_uq').on(t.reference),
-    index('leads_owner_stage_idx').on(t.ownerId, t.stage),
-    index('leads_team_owner_idx').on(t.teamId, t.ownerId),
-    index('leads_created_idx').on(t.createdAt),
-    index('leads_last_activity_idx').on(t.lastActivityAt),
-    index('leads_stage_last_contact_idx').on(t.stage, t.lastContactAt),
-    index('leads_source_idx').on(t.source),
-    index('leads_priority_score_idx').on(t.priority, t.score),
-  ],
+  (t) => ({
+    leads_reference_uq: uniqueIndex('leads_reference_uq').on(t.reference),
+    leads_owner_stage_idx: index('leads_owner_stage_idx').on(t.ownerId, t.stage),
+    leads_team_owner_idx: index('leads_team_owner_idx').on(t.teamId, t.ownerId),
+    leads_created_idx: index('leads_created_idx').on(t.createdAt),
+    leads_last_activity_idx: index('leads_last_activity_idx').on(t.lastActivityAt),
+    leads_stage_last_contact_idx: index('leads_stage_last_contact_idx').on(
+      t.stage,
+      t.lastContactAt,
+    ),
+    leads_source_idx: index('leads_source_idx').on(t.source),
+    leads_priority_score_idx: index('leads_priority_score_idx').on(t.priority, t.score),
+  }),
 );
 
 export const activities = sqliteTable(
@@ -197,7 +206,9 @@ export const activities = sqliteTable(
     metadata: json<Record<string, unknown>>('metadata'),
     createdAt: ts('created_at').notNull(),
   },
-  (t) => [index('activities_lead_time_idx').on(t.leadId, t.createdAt)],
+  (t) => ({
+    activities_lead_time_idx: index('activities_lead_time_idx').on(t.leadId, t.createdAt),
+  }),
 );
 
 export const stageHistory = sqliteTable(
@@ -213,7 +224,9 @@ export const stageHistory = sqliteTable(
     reason: text('reason'),
     changedAt: ts('changed_at').notNull(),
   },
-  (t) => [index('stage_history_lead_time_idx').on(t.leadId, t.changedAt)],
+  (t) => ({
+    stage_history_lead_time_idx: index('stage_history_lead_time_idx').on(t.leadId, t.changedAt),
+  }),
 );
 
 export const followUps = sqliteTable(
@@ -234,7 +247,13 @@ export const followUps = sqliteTable(
     completedAt: ts('completed_at'),
     completedByActivityId: text('completed_by_activity_id').references(() => activities.id),
   },
-  (t) => [index('follow_ups_assignee_status_due_idx').on(t.assignedTo, t.status, t.dueAt)],
+  (t) => ({
+    follow_ups_assignee_status_due_idx: index('follow_ups_assignee_status_due_idx').on(
+      t.assignedTo,
+      t.status,
+      t.dueAt,
+    ),
+  }),
 );
 
 export const purchases = sqliteTable(
@@ -249,7 +268,7 @@ export const purchases = sqliteTable(
     amount: integer('amount').notNull(),
     purchasedAt: ts('purchased_at').notNull(),
   },
-  (t) => [index('purchases_customer_idx').on(t.customerId)],
+  (t) => ({ purchases_customer_idx: index('purchases_customer_idx').on(t.customerId) }),
 );
 
 export const auditLog = sqliteTable(
@@ -266,8 +285,8 @@ export const auditLog = sqliteTable(
     ip: text('ip'),
     createdAt: ts('created_at').notNull(),
   },
-  (t) => [
-    index('audit_entity_idx').on(t.entity, t.entityId),
-    index('audit_created_idx').on(t.createdAt),
-  ],
+  (t) => ({
+    audit_entity_idx: index('audit_entity_idx').on(t.entity, t.entityId),
+    audit_created_idx: index('audit_created_idx').on(t.createdAt),
+  }),
 );

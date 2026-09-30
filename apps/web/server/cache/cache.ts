@@ -55,7 +55,13 @@ export class RedisCache implements Cache {
     try {
       let cursor = '0';
       do {
-        const [next, keys] = await this.redis.scan(cursor, 'MATCH', `${PREFIX}${prefix}*`, 'COUNT', 200);
+        const [next, keys] = await this.redis.scan(
+          cursor,
+          'MATCH',
+          `${PREFIX}${prefix}*`,
+          'COUNT',
+          200,
+        );
         cursor = next;
         if (keys.length) await this.redis.unlink(...keys);
       } while (cursor !== '0');
@@ -75,12 +81,12 @@ export class RedisCache implements Cache {
 
 /** Degraded-mode cache: never stores anything, always loads. */
 export class NoopCache implements Cache {
-  async get<T>(): Promise<T | null> {
+  async get<T>(_key: string): Promise<T | null> {
     return null;
   }
-  async set(): Promise<void> {}
-  async del(): Promise<void> {}
-  async delByPrefix(): Promise<void> {}
+  async set<T>(_key: string, _value: T, _ttlSeconds: number): Promise<void> {}
+  async del(..._keys: string[]): Promise<void> {}
+  async delByPrefix(_prefix: string): Promise<void> {}
   async wrap<T>(_key: string, _ttl: number, loader: () => Promise<T>): Promise<T> {
     return loader();
   }

@@ -23,7 +23,11 @@ function clamp(n: number, lo: number, hi: number): number {
   return Math.min(hi, Math.max(lo, n));
 }
 
-export function scoreLeads(db: Db | Tx, leadIds?: string[], forceHot: Set<string> = new Set()): void {
+export function scoreLeads(
+  db: Db | Tx,
+  leadIds?: string[],
+  forceHot: Set<string> = new Set(),
+): void {
   const rows = db
     .select({ lead: leads, isReturning: customers.isReturning })
     .from(leads)
@@ -38,7 +42,10 @@ export function scoreLeads(db: Db | Tx, leadIds?: string[], forceHot: Set<string
     const open = !['WON', 'LOST', 'COLD'].includes(lead.stage);
     const recent = now - lead.createdAt < 14 * DAY;
     const intentBonus =
-      (lead.testDriveRequested ? 8 : 0) + (lead.wantsFinance ? 5 : 0) + (lead.hasTradeIn ? 5 : 0) + (lead.vehicleModel ? 3 : 0);
+      (lead.testDriveRequested ? 8 : 0) +
+      (lead.wantsFinance ? 5 : 0) +
+      (lead.hasTradeIn ? 5 : 0) +
+      (lead.vehicleModel ? 3 : 0);
     const raw = base + intentBonus + (isReturning ? 6 : 0);
 
     let score: number;

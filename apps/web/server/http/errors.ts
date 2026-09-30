@@ -73,6 +73,8 @@ export function toErrorResponse(
   console.error(JSON.stringify({ level: 'error', requestId, message }));
   return {
     status: 500,
-    body: { error: { code: 'INTERNAL_ERROR', message: `Internal server error (ref ${requestId})` } },
+    body: {
+      error: { code: 'INTERNAL_ERROR', message: `Internal server error (ref ${requestId})` },
+    },
   };
 }
