@@ -11,12 +11,13 @@ import {
   type ActivityType,
 } from '@leaddesk/shared';
 import { db as defaultDb, type Db } from '../db/client';
-import { leadScopeWhere, resolveScope, type CurrentUser, type Scope } from '../policy';
+import { can, leadScopeWhere, resolveScope, type CurrentUser, type Scope } from '../policy';
 import {
   endOfDay,
   normalizeListParams,
   searchTerms,
   zonedDayStart,
+  type InboxCaps,
   type NormalizedParams,
 } from './lead-query.rank';
 
@@ -93,12 +94,28 @@ const list = (vals: readonly (string | number)[]): SQL =>
     sql`, `,
   );
 
-/** FR-001: scope via F03. The working set of a REP for derived views is their own leads. */
-function worksetWhere(user: CurrentUser, scope: Scope): SQL {
-  return user.role === 'REP' ? sql`leads.owner_id = ${user.id}` : leadScopeWhere(scope);
+/** Capabilities come from F03 policy actions, so no role names are compared here. */
+export async function inboxCaps(user: CurrentUser, scope: Scope, database: Db): Promise<InboxCaps> {
+  const deps = { scope, database };
+  const [leader, orgWide] = await Promise.all([
+    can(user, 'user:list', undefined, deps),
+    can(user, 'dashboard:org', undefined, deps),
+  ]);
+  return { leader, orgWide };
 }
 
-function buildWhere(user: CurrentUser, scope: Scope, p: NormalizedParams, now: number): SQL {
+/** FR-001: scope via F03. The working set of a non-leader for derived views is their own leads. */
+function worksetWhere(user: CurrentUser, scope: Scope, caps: InboxCaps): SQL {
+  return caps.leader ? leadScopeWhere(scope) : sql`leads.owner_id = ${user.id}`;
+}
+
+function buildWhere(
+  user: CurrentUser,
+  scope: Scope,
+  caps: InboxCaps,
+  p: NormalizedParams,
+  now: number,
+): SQL {
   const where: SQL[] = [leadScopeWhere(scope)];
 
   switch (p.view) {
@@ -109,10 +126,10 @@ function buildWhere(user: CurrentUser, scope: Scope, p: NormalizedParams, now: n
       where.push(sql`leads.owner_id IS NULL`);
       break;
     case 'due_today':
-      where.push(worksetWhere(user, scope), sql`${NEXT_FU} < ${endOfDay(now, p.tz)}`);
+      where.push(worksetWhere(user, scope, caps), sql`${NEXT_FU} < ${endOfDay(now, p.tz)}`);
       break;
     case 'going_cold':
-      where.push(worksetWhere(user, scope), coldSql(now));
+      where.push(worksetWhere(user, scope, caps), coldSql(now));
       break;
     case 'team':
       break;
@@ -223,7 +240,8 @@ export async function countTabs(
   const database = deps.db ?? defaultDb;
   const now = deps.now ?? Date.now();
   const scope = await resolveScope(user.id, database);
-  const work = worksetWhere(user, scope);
+  const caps = await inboxCaps(user, scope, database);
+  const work = worksetWhere(user, scope, caps);
   const open = sql`leads.stage IN ('NEW','CONTACTED','QUALIFIED','TEST_DRIVE','NEGOTIATION')`;
   const eod = endOfDay(now, tz);
   const row = database.get<Record<keyof TabCounts, number | null>>(sql`
@@ -256,9 +274,10 @@ export async function listLeads(
   const database = deps.db ?? defaultDb;
   const now = deps.now ?? Date.now();
   const query = LeadListQuerySchema.parse(rawQuery);
-  const p = normalizeListParams(query, user.role);
   const scope = await resolveScope(user.id, database);
-  const where = buildWhere(user, scope, p, now);
+  const caps = await inboxCaps(user, scope, database);
+  const p = normalizeListParams(query, caps);
+  const where = buildWhere(user, scope, caps, p, now);
 
   const total =
     database.get<{ n: number }>(sql`SELECT COUNT(*) AS n ${FROM} WHERE ${where}`)?.n ?? 0;
@@ -340,9 +359,9 @@ export async function listScopeOwners(
   user: CurrentUser,
   deps: QueryDeps = {},
 ): Promise<{ id: string; name: string }[]> {
-  if (user.role === 'REP') return [];
   const database = deps.db ?? defaultDb;
   const scope = await resolveScope(user.id, database);
+  if (!(await inboxCaps(user, scope, database)).leader) return [];
   const ids = [...scope.userIds];
   if (!ids.length) return [];
   return database.all<{ id: string; name: string }>(

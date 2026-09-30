@@ -1,6 +1,8 @@
 import { redirect } from 'next/navigation';
 import { getCurrentUser } from '@/server/auth/get-current-user';
-import { listLeads, listScopeOwners } from '@/server/services/lead-query';
+import { inboxCaps, listLeads, listScopeOwners } from '@/server/services/lead-query';
+import { db } from '@/server/db/client';
+import { getScope } from '@/server/policy';
 import { InboxView } from '@/components/leads/inbox/InboxView';
 import { lenientParams, toQueryString } from '@/components/leads/inbox/inbox-params';
 
@@ -16,11 +18,15 @@ export default async function InboxPage({
 
   // Bad params are ignored and defaults shown (spec section 5).
   const params = lenientParams(searchParams);
-  const [initialData, owners] = await Promise.all([listLeads(user, params), listScopeOwners(user)]);
+  const [initialData, owners, caps] = await Promise.all([
+    listLeads(user, params),
+    listScopeOwners(user),
+    getScope(user.id).then((scope) => inboxCaps(user, scope, db)),
+  ]);
 
   return (
     <InboxView
-      role={user.role}
+      caps={caps}
       initialData={initialData}
       initialKey={toQueryString(params)}
       owners={owners}

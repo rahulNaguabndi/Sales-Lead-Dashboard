@@ -1,6 +1,6 @@
 'use client';
 
-import { LEAD_SOURCES, PRIORITIES, STAGES, type Role } from '@leaddesk/shared';
+import { LEAD_SOURCES, PRIORITIES, STAGES } from '@leaddesk/shared';
 import { Button } from '@/components/ui/button';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { activeFilterKeys, csvValues, toggleCsv, type InboxParams } from './inbox-params';
@@ -68,13 +68,13 @@ function chipLabel(key: string, value: string, owners: { id: string; name: strin
 }
 
 export function InboxFilters({
-  role,
+  leader,
   params,
   owners,
   onPatch,
   onClear,
 }: {
-  role: Role;
+  leader: boolean;
   params: InboxParams;
   owners: { id: string; name: string }[];
   onPatch: (patch: Patch) => void;
@@ -111,7 +111,7 @@ export function InboxFilters({
             selected={csvValues(params.priority)}
             onToggle={(v) => onPatch({ priority: toggleCsv(params.priority, v) })}
           />
-          {role !== 'REP' && (
+          {leader && (
             <CheckGroup
               legend="Owner"
               options={[

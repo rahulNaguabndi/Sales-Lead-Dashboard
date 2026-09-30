@@ -7,7 +7,6 @@ import {
   keepPreviousData,
   useQuery,
 } from '@tanstack/react-query';
-import type { Role } from '@leaddesk/shared';
 import type { LeadListResult } from '@/server/services/lead-query';
 import { apiFetch } from '@/lib/api-client';
 import { Button } from '@/components/ui/button';
@@ -16,7 +15,7 @@ import { activeFilterKeys, toQueryString } from './inbox-params';
 import { InboxFilters } from './InboxFilters';
 import { InboxSearch } from './InboxSearch';
 import { InboxTable } from './InboxTable';
-import { InboxTabs } from './InboxTabs';
+import { InboxTabs, type TabCaps } from './InboxTabs';
 import { StatChips, type StatChipKey } from './StatChips';
 import { useInboxParams } from './useInboxParams';
 
@@ -30,13 +29,13 @@ const SORTS: [string, string][] = [
 ];
 
 type Props = {
-  role: Role;
+  caps: TabCaps;
   initialData: LeadListResult;
   initialKey: string;
   owners: { id: string; name: string }[];
 };
 
-function Inbox({ role, initialData, initialKey, owners }: Props) {
+function Inbox({ caps, initialData, initialKey, owners }: Props) {
   const { params, patch, clear } = useInboxParams();
   const qs = toQueryString(params);
 
@@ -78,7 +77,7 @@ function Inbox({ role, initialData, initialKey, owners }: Props) {
       <div className="flex flex-wrap items-center justify-between gap-2">
         {data && (
           <InboxTabs
-            role={role}
+            caps={caps}
             counts={data.counts}
             active={data.view}
             onSelect={(view) => patch({ view })}
@@ -103,7 +102,13 @@ function Inbox({ role, initialData, initialKey, owners }: Props) {
           </select>
         </div>
       </div>
-      <InboxFilters role={role} params={params} owners={owners} onPatch={patch} onClear={clear} />
+      <InboxFilters
+        leader={caps.leader}
+        params={params}
+        owners={owners}
+        onPatch={patch}
+        onClear={clear}
+      />
 
       <InboxTable
         items={data?.items}

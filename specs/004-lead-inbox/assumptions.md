@@ -13,4 +13,8 @@
 | 9 | Row summary "Called · 3 h ago" source | Latest USER activity (notes included) per lead; type label + relative time. | F04 §9 |
 | 10 | `atRisk` flag in response | Computed as open lead with `coalesce(last_contact_at, created_at)` older than 2 days and not yet cold (informational only, not ranked). | inferred from domain model |
 | 11 | Live-slot when F12 absent | `useInboxLive()` returns an empty `Set`. | F04 §9 |
-| 12 | E2E file `tests/e2e/core-loop.spec.ts` is shared with F05/F06. | F04 creates the file with the inbox steps; F05/F06 append steps. Merge conflicts resolved at integration. | F04 §9 |
+| 12 | E2E file `apps/web/e2e/core-loop.spec.ts` is shared with F05/F06. | F04 creates the file with the inbox steps; F05/F06 append steps. Merge conflicts resolved at integration. | F04 §9 |
+| 13 | Where does the e2e file live? | `apps/web/e2e/core-loop.spec.ts` (Playwright `testDir` is `apps/web/e2e`); shared `helpers.ts` holds `signIn`. Doc amended. | playwright.config.ts |
+| 14 | How does the service tell a leader from a rep without comparing role names (SC-004 guard)? | `inboxCaps()` uses F03 `can(user,'user:list')` (leader) and `can(user,'dashboard:org')` (org-wide). | F03 guard test |
+| 15 | Going Cold default order | With `sort=rank` the going_cold view orders by `coalesce(last_contact_at, created_at)` ASC (oldest first, US-3.5). | F04 US-3 |
+| 16 | New dependency | `@tanstack/react-query` (client cache keyed `['leads', params]`, FR-013). TanStack Table skipped: plain table is enough for a fixed 9-column list. | FR-013 / VIII simplicity |

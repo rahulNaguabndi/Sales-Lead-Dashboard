@@ -1,16 +1,17 @@
 'use client';
 
-import type { Role } from '@leaddesk/shared';
 import type { TabCounts } from '@/server/services/lead-query';
 import { cn } from '@/lib/utils';
 
 type TabDef = { view: string; label: string; count?: number };
 
-export function buildTabs(role: Role, counts: TabCounts): TabDef[] {
+export type TabCaps = { leader: boolean; orgWide: boolean };
+
+export function buildTabs(caps: TabCaps, counts: TabCounts): TabDef[] {
   const tabs: TabDef[] = [];
-  if (role !== 'REP') tabs.push({ view: 'team', label: role === 'VP' ? 'All' : 'Team' });
+  if (caps.leader) tabs.push({ view: 'team', label: caps.orgWide ? 'All' : 'Team' });
   // Managers and VPs only get My Leads when they own at least one lead (open question, section 11).
-  if (role === 'REP' || counts.mine > 0) {
+  if (!caps.leader || counts.mine > 0) {
     tabs.push({ view: 'mine', label: 'My Leads', count: counts.mine });
   }
   tabs.push(
@@ -22,19 +23,19 @@ export function buildTabs(role: Role, counts: TabCounts): TabDef[] {
 }
 
 export function InboxTabs({
-  role,
+  caps,
   counts,
   active,
   onSelect,
 }: {
-  role: Role;
+  caps: TabCaps;
   counts: TabCounts;
   active: string;
   onSelect: (view: string) => void;
 }) {
   return (
     <div role="tablist" aria-label="Lead views" className="flex flex-wrap gap-1">
-      {buildTabs(role, counts).map((t) => (
+      {buildTabs(caps, counts).map((t) => (
         <button
           key={t.view}
           role="tab"

@@ -5,7 +5,6 @@ import {
   stripDiacritics,
   type LeadListQuery,
   type LeadSource,
-  type Role,
   type SlaInput,
   type Stage,
 } from '@leaddesk/shared';
@@ -97,8 +96,16 @@ export function zonedDayStart(isoDate: string, tz: string): number {
   return midnightOf({ y: y!, m: m! - 1, d: d! }, validTz(tz));
 }
 
-export function defaultView(role: Role): ListView {
-  return role === 'REP' ? 'mine' : 'team';
+/** What the viewer may do, derived from policy (never from role names): see F03 `can`. */
+export type InboxCaps = {
+  /** Sees a team or more than their own leads (owner filter, Team tab). */
+  leader: boolean;
+  /** Sees the whole organisation (team filter, All tab). */
+  orgWide: boolean;
+};
+
+export function defaultView(caps: InboxCaps): ListView {
+  return caps.leader ? 'team' : 'mine';
 }
 
 export type NormalizedParams = {
@@ -124,15 +131,15 @@ export type NormalizedParams = {
 const OPEN: readonly Stage[] = OPEN_STAGES;
 
 /** Applies role defaults and role-based restrictions. Never throws and never rejects (FR-014). */
-export function normalizeListParams(query: LeadListQuery, role: Role): NormalizedParams {
+export function normalizeListParams(query: LeadListQuery, caps: InboxCaps): NormalizedParams {
   let view: ListView;
   switch (query.view) {
     case undefined:
-      view = defaultView(role);
+      view = defaultView(caps);
       break;
     case 'all':
     case 'team':
-      view = role === 'REP' ? 'mine' : 'team';
+      view = caps.leader ? 'team' : 'mine';
       break;
     default:
       view = query.view;
@@ -157,8 +164,8 @@ export function normalizeListParams(query: LeadListQuery, role: Role): Normalize
     stages,
     sources,
     priorities: query.priority?.length ? query.priority : null,
-    owners: role !== 'REP' && query.owner?.length ? query.owner : null,
-    teams: role === 'VP' && query.team?.length ? query.team : null,
+    owners: caps.leader && query.owner?.length ? query.owner : null,
+    teams: caps.orgWide && query.team?.length ? query.team : null,
     returning: query.returning,
     overdue: query.overdue === true,
     slaBreached: query.sla === 'breached',

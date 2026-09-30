@@ -8,6 +8,7 @@ import {
   normalizeListParams,
   searchTerms,
   zonedDayStart,
+  type InboxCaps,
   type RankFields,
 } from '../lead-query.rank';
 
@@ -93,62 +94,66 @@ describe('time zones', () => {
   });
 });
 
+const REP: InboxCaps = { leader: false, orgWide: false };
+const MANAGER: InboxCaps = { leader: true, orgWide: false };
+const VP: InboxCaps = { leader: true, orgWide: true };
+
 describe('normalizeListParams', () => {
   const parse = (o: Record<string, string>) => LeadListQuerySchema.parse(o);
 
   it('defaults the view by role', () => {
-    expect(defaultView('REP')).toBe('mine');
-    expect(defaultView('MANAGER')).toBe('team');
-    expect(defaultView('VP')).toBe('team');
-    expect(normalizeListParams(parse({}), 'REP').view).toBe('mine');
-    expect(normalizeListParams(parse({}), 'VP').view).toBe('team');
+    expect(defaultView(REP)).toBe('mine');
+    expect(defaultView(MANAGER)).toBe('team');
+    expect(defaultView(VP)).toBe('team');
+    expect(normalizeListParams(parse({}), REP).view).toBe('mine');
+    expect(normalizeListParams(parse({}), VP).view).toBe('team');
   });
 
   it('maps role-inappropriate views to something safe', () => {
-    expect(normalizeListParams(parse({ view: 'team' }), 'REP').view).toBe('mine');
-    expect(normalizeListParams(parse({ view: 'all' }), 'REP').view).toBe('mine');
-    expect(normalizeListParams(parse({ view: 'all' }), 'MANAGER').view).toBe('team');
-    expect(normalizeListParams(parse({ view: 'all' }), 'VP').view).toBe('team');
-    expect(normalizeListParams(parse({ view: 'going_cold' }), 'REP').view).toBe('going_cold');
+    expect(normalizeListParams(parse({ view: 'team' }), REP).view).toBe('mine');
+    expect(normalizeListParams(parse({ view: 'all' }), REP).view).toBe('mine');
+    expect(normalizeListParams(parse({ view: 'all' }), MANAGER).view).toBe('team');
+    expect(normalizeListParams(parse({ view: 'all' }), VP).view).toBe('team');
+    expect(normalizeListParams(parse({ view: 'going_cold' }), REP).view).toBe('going_cold');
   });
 
   it('drops owner for REP and team for non-VP', () => {
     const q = parse({ owner: 'u1,unassigned', team: 't1' });
-    const rep = normalizeListParams(q, 'REP');
+    const rep = normalizeListParams(q, REP);
     expect(rep.owners).toBeNull();
     expect(rep.teams).toBeNull();
-    const mgr = normalizeListParams(q, 'MANAGER');
+    const mgr = normalizeListParams(q, MANAGER);
     expect(mgr.owners).toEqual(['u1', 'unassigned']);
     expect(mgr.teams).toBeNull();
-    expect(normalizeListParams(q, 'VP').teams).toEqual(['t1']);
+    expect(normalizeListParams(q, VP).teams).toEqual(['t1']);
   });
 
   it('expands sourceGroup and merges with source (AND)', () => {
-    const n = normalizeListParams(parse({ sourceGroup: 'SOCIAL' }), 'VP');
+    const n = normalizeListParams(parse({ sourceGroup: 'SOCIAL' }), VP);
     expect([...(n.sources ?? [])].sort()).toEqual(['FACEBOOK', 'INSTAGRAM']);
     const both = normalizeListParams(
       parse({ sourceGroup: 'SOCIAL', source: 'FACEBOOK,WEBSITE' }),
-      'VP',
+      VP,
     );
     expect(both.sources).toEqual(['FACEBOOK']);
   });
 
   it('resolves stages: explicit > closed toggle > open only', () => {
-    expect(normalizeListParams(parse({}), 'REP').stages).toEqual([
+    expect(normalizeListParams(parse({}), REP).stages).toEqual([
       'NEW',
       'CONTACTED',
       'QUALIFIED',
       'TEST_DRIVE',
       'NEGOTIATION',
     ]);
-    expect(normalizeListParams(parse({ closed: 'true' }), 'REP').stages).toContain('WON');
-    expect(normalizeListParams(parse({ closed: 'true' }), 'REP').stages).not.toContain('COLD');
-    expect(normalizeListParams(parse({ stage: 'COLD' }), 'REP').stages).toEqual(['COLD']);
+    expect(normalizeListParams(parse({ closed: 'true' }), REP).stages).toContain('WON');
+    expect(normalizeListParams(parse({ closed: 'true' }), REP).stages).not.toContain('COLD');
+    expect(normalizeListParams(parse({ stage: 'COLD' }), REP).stages).toEqual(['COLD']);
   });
 
   it('uses the default tz for invalid values and keeps valid ones', () => {
-    expect(normalizeListParams(parse({ tz: 'nope' }), 'REP').tz).toBe('Europe/Berlin');
-    expect(normalizeListParams(parse({ tz: 'Asia/Tokyo' }), 'REP').tz).toBe('Asia/Tokyo');
+    expect(normalizeListParams(parse({ tz: 'nope' }), REP).tz).toBe('Europe/Berlin');
+    expect(normalizeListParams(parse({ tz: 'Asia/Tokyo' }), REP).tz).toBe('Asia/Tokyo');
   });
 
   it('schema rejects bad values and accepts CSV', () => {
