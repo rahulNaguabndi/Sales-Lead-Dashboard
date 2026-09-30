@@ -1,14 +1,14 @@
 'use client';
 
 import type { Role } from '@leaddesk/shared';
-import { Badge } from '@/components/ui/badge';
+import { UserMenu } from './user-menu';
 import { Input } from '@/components/ui/input';
 
 export function TopBar({
   user,
   title = '',
 }: {
-  user: { name: string; role: Role };
+  user: { name: string; role: Role; teamName?: string | null };
   title?: string;
 }) {
   return (
@@ -26,9 +26,8 @@ export function TopBar({
         {/* Mount points: F15 offers strip, F12 live indicator, F02 user menu. */}
         <div data-slot="offers-strip" />
         <div data-slot="live-dot" />
-        <div data-slot="user-menu" className="flex items-center gap-2">
-          <span className="text-sm text-slate-300">{user.name}</span>
-          <Badge variant="secondary">{user.role}</Badge>
+        <div data-slot="user-menu">
+          <UserMenu user={user} />
         </div>
       </div>
     </header>
