@@ -4,8 +4,12 @@ export const MINUTE = 60_000;
 export const HOUR = 60 * MINUTE;
 export const DAY = 24 * HOUR;
 
-/** Single reference point for every timestamp in a seed run (FR-030). */
-export const clock = { now: Date.now() };
+/**
+ * Single reference point for every timestamp in a seed run (FR-030). It is truncated to the hour
+ * so two resets within the same hour produce byte-identical data.
+ */
+export const defaultNow = () => Math.floor(Date.now() / HOUR) * HOUR;
+export const clock = { now: defaultNow() };
 
 export function setNow(ms: number): void {
   clock.now = ms;
@@ -26,7 +30,10 @@ export function workingHoursOffset(baseMs: number, minutesOffset = 0): number {
   if (hour >= WORK_START_H && hour < WORK_END_H) return ms;
   const dayStart = Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate());
   const nextDay = hour >= WORK_END_H ? DAY : 0;
-  return dayStart + nextDay + WORK_START_H * HOUR + rng.int(0, 120) * MINUTE;
+  // Jitter is derived from the timestamp, not the shared rng: the number of rng draws must not
+  // depend on the wall-clock time of day, or two seeds run hours apart would diverge.
+  const jitter = (Math.imul(Math.floor(ms / MINUTE), 2654435761) >>> 0) % 121;
+  return dayStart + nextDay + WORK_START_H * HOUR + jitter * MINUTE;
 }
 
 /** A random time after afterMs that falls inside working hours. */

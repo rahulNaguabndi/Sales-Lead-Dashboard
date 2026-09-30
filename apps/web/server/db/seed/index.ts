@@ -4,7 +4,7 @@ import { openDatabase, resolveDbPath } from '../client';
 import { runMigrations } from '../migrate';
 import * as schema from '../schema';
 import { rng } from './utils/rng';
-import { clock, DAY, setNow, MINUTE } from './utils/time';
+import { clock, DAY, defaultNow, setNow, MINUTE } from './utils/time';
 import { resetReferences } from './utils/reference';
 import { resetIds } from './utils/ids';
 import { seedOrg } from './org';
@@ -39,7 +39,7 @@ export function seedDatabase(db: Db, opts: SeedOptions = {}): SeedSummary {
   const seed = opts.seed ?? Number(process.env.SEED ?? '42');
   rng.reseed(seed);
   seedFaker(seed);
-  setNow(opts.now ?? Date.now());
+  setNow(opts.now ?? defaultNow());
   resetReferences(new Date(clock.now).getUTCFullYear());
   resetIds(seed);
 
@@ -64,7 +64,7 @@ export function seedDatabase(db: Db, opts: SeedOptions = {}): SeedSummary {
   const forceHot = new Set([...scenario.forceHot, ...heroLeads.forceHot]);
 
   // References are assigned in creation order because leads are built oldest-first.
-  const built: BuiltLead[] = allPlans.map((p) => buildLead(p, offers));
+  const built: BuiltLead[] = allPlans.map((p, i) => rng.withSeed(seed * 1_000_003 + i, () => buildLead(p, offers)));
 
   // Customers exist from their first lead (or purchase) onwards.
   const firstLead = new Map<string, number>();

@@ -10,6 +10,20 @@ export class SeededRng {
     this.state = seed >>> 0;
   }
 
+  /**
+   * Runs fn on an independent stream derived from `seed`, then restores the main stream. A tiny
+   * input change (e.g. a timestamp crossing a threshold) then only affects the forked item.
+   */
+  withSeed<T>(seed: number, fn: () => T): T {
+    const saved = this.state;
+    this.state = (Math.imul(seed, 2654435761) ^ 0x85ebca6b) >>> 0;
+    try {
+      return fn();
+    } finally {
+      this.state = saved;
+    }
+  }
+
   /** Uniform float in [0, 1). */
   next(): number {
     this.state = (this.state + 0x6d2b79f5) >>> 0;

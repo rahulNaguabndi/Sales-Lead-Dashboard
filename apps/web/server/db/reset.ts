@@ -1,9 +1,10 @@
 import fs from 'node:fs';
-import { execSync } from 'node:child_process';
-import { resolveDbPath } from './client';
+import { openDatabase, resolveDbPath } from './client';
+import { runMigrations } from './migrate';
+import { printSummary, seedDatabase } from './seed';
 
-// Deletes the database files, then migrates and seeds. On Windows a running dev server holds a
-// lock on the file (EBUSY), so detect that and explain.
+// Deletes the database files, then migrates and seeds in-process. On Windows a running dev
+// server holds a lock on the file (EBUSY), so detect that and explain.
 const file = resolveDbPath();
 for (const suffix of ['', '-wal', '-shm']) {
   try {
@@ -17,4 +18,11 @@ for (const suffix of ['', '-wal', '-shm']) {
     throw err;
   }
 }
-execSync('npm run db:migrate && npm run db:seed', { stdio: 'inherit' });
+
+const { sqlite, db } = openDatabase(file);
+try {
+  runMigrations(db);
+  printSummary(seedDatabase(db));
+} finally {
+  sqlite.close();
+}
