@@ -7,6 +7,17 @@ import { FollowUpCard } from '@/components/followups/followup-card';
 import { ChannelBar } from '@/components/leads/channels/ChannelBar';
 import { CustomerExtras } from '@/components/leads/customer/CustomerExtras';
 import { OffersPanel } from '@/components/offers/OffersPanel';
+import { StageSelect } from '@/components/leads/stage/StageSelect';
+
+/** `headerActions` is shared: F07 stage select + F11 claim/assign. */
+function HeaderActions(props: LeadSlotProps) {
+  return (
+    <div className="flex items-center gap-2">
+      <StageSelect {...props} />
+      <LeadHeaderAssign {...props} />
+    </div>
+  );
+}
 
 export type LeadSlotName =
   | 'composer'
@@ -32,6 +43,6 @@ export const leadSlots: LeadSlots = {
   offers: OffersPanel as ComponentType<LeadSlotProps>,
   ai: null,
   customerExtras: CustomerExtras as ComponentType<LeadSlotProps>,
-  headerActions: LeadHeaderAssign as ComponentType<LeadSlotProps>,
+  headerActions: HeaderActions as ComponentType<LeadSlotProps>,
   liveNote: UpdatedByNote as ComponentType<LeadSlotProps>,
 };

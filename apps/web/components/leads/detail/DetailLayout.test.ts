@@ -1,9 +1,14 @@
 import { createElement } from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import { DetailLayout } from './DetailLayout';
 import { leadSlots, type LeadSlots } from './slots';
 import type { LeadDetail, LeadSlotProps } from './types';
+
+vi.mock('next/navigation', () => ({ useRouter: () => ({ refresh: () => undefined }) }));
+vi.mock('@tanstack/react-query', () => ({
+  useQueryClient: () => ({ invalidateQueries: () => Promise.resolve() }),
+}));
 
 const detail: LeadDetail = {
   lead: {
