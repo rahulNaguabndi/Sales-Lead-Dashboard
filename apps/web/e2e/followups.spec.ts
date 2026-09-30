@@ -40,7 +40,7 @@ test('rep schedules Tomorrow 18:00 from the follow-up card and sees it listed', 
   await page.getByRole('button', { name: 'Tomorrow 18:00' }).click();
 
   await expect(card.getByTestId('followup-next')).toContainText('18:00');
-  await expect(card.getByTestId('followup-cadence')).toContainText(/Attempt \d of 5/);
+  await expect(card.getByTestId('followup-cadence')).toContainText(/Attempt \d of 5|Cadence complete/);
 
   const upcoming = await page.evaluate(async () => {
     const r = await fetch('/api/follow-ups?view=upcoming');

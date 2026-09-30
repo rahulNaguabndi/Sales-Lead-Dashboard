@@ -1,5 +1,18 @@
 import { expect, test } from '@playwright/test';
+import path from 'node:path';
+import Database from 'better-sqlite3';
 import { signIn } from './helpers';
+
+// The seed gives reps more open leads than max_open_leads, so claims would hit the limit.
+test.beforeAll(() => {
+  const url = process.env.DATABASE_URL ?? './data/leaddesk.db';
+  const conn = new Database(path.resolve(process.cwd(), 'apps/web', url.replace(/^file:/, '')));
+  try {
+    conn.prepare('UPDATE users SET max_open_leads = 1000').run();
+  } finally {
+    conn.close();
+  }
+});
 
 test.describe('claim (F11)', () => {
   test('rep claims from Unassigned and the timeline records it', async ({ page }) => {
@@ -24,7 +37,8 @@ test.describe('claim (F11)', () => {
     await signIn(a, 'anna.weber@eurodrive.test');
     await signIn(b, 'jonas.fischer@eurodrive.test');
     await b.goto('/inbox?view=unassigned');
-    const id = await b.locator('[data-lead-row]').first().getAttribute('data-lead-id');
+    // nth(1): the first row can still be the lead claimed by the previous test (stale cache).
+    const id = await b.locator('[data-lead-row]').nth(1).getAttribute('data-lead-id');
     // Anna claims through the API; Jonas still has the stale row and clicks Claim.
     const res = await a.request.post(`/api/leads/${id}/claim`, { data: {} });
     expect(res.status()).toBe(200);

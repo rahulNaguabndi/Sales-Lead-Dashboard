@@ -160,6 +160,8 @@ export function applyOwnershipChange(tx: Tx, c: Change): { lead: LeadRow; event:
         from: lead.ownerId,
         to: to?.id ?? null,
         method: c.method,
+        ...(c.byName ? { byName: c.byName } : {}),
+        ...(to ? { toName: to.name } : {}),
         ...(c.reason ? { reason: c.reason } : {}),
         ...(teamChanged ? { fromTeam: lead.teamId, toTeam: newTeamId } : {}),
       },
