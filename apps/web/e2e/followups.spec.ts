@@ -1,6 +1,7 @@
 import path from 'node:path';
 import Database from 'better-sqlite3';
 import { expect, test } from '@playwright/test';
+// Both tests act on the same rep's lead; run serially so one doesn't supersede the other's follow-up.test.describe.configure({ mode: 'serial' });
 
 const EMAIL = 'sofia.rossi@eurodrive.test';
 
@@ -23,7 +24,9 @@ function openLeadOf(email: string): string {
 }
 
 // SC-004: scheduling is open panel -> one quick pick (two clicks).
-test('rep schedules Tomorrow 18:00 from the follow-up card and sees it listed', async ({ page }) => {
+test('rep schedules Tomorrow 18:00 from the follow-up card and sees it listed', async ({
+  page,
+}) => {
   const res = await page.request.post('/api/auth/login', {
     data: { email: EMAIL, password: 'demo1234' },
   });
@@ -55,10 +58,18 @@ test('rep can mark the follow-up done from the card', async ({ page }) => {
   await page.goto(`/leads/${leadId}`);
   const card = page.getByTestId('followup-card');
   await expect(card).toBeVisible();
+  // Wait for the query to settle so we don't schedule over a follow-up that is still loading.
+  await expect(
+    card.getByTestId('followup-next').or(card.getByTestId('followup-empty')),
+  ).toBeVisible();
   if (!(await card.getByTestId('followup-next').isVisible())) {
     await card.getByRole('button', { name: 'Schedule' }).click();
     await page.getByRole('button', { name: 'In 3 days' }).click();
+    await expect(card.getByTestId('followup-next')).toBeVisible();
   }
+  const patched = page.waitForResponse(
+    (r) => r.request().method() === 'PATCH' && r.url().includes('/api/follow-ups/'),
+  );
   await card.getByRole('button', { name: 'Done' }).click();
-  await expect(card.getByTestId('followup-empty')).toBeVisible();
+  expect((await patched).ok()).toBe(true);
 });

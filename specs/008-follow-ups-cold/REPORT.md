@@ -1,6 +1,6 @@
 # F08 Build Report
-Status: SPECCED
-Branch: 008-follow-ups-cold · Commits: 1 (spec) + 1 (report)
+Status: DONE
+Branch: 008-follow-ups-cold · Commits: spec + 3 feat/test + report
 
 ## Acceptance scenarios
 | Story/Scenario | Result | Evidence |
