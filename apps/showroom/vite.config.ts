@@ -8,4 +8,11 @@ export default defineConfig({
     alias: { '@leaddesk/shared': path.resolve(__dirname, '../../packages/shared/src/index.ts') },
   },
   server: { port: Number(process.env.SHOWROOM_PORT ?? 3001) },
+  test: {
+    environment: 'jsdom',
+    globals: true,
+    setupFiles: ['./src/test/setup.ts'],
+    include: ['src/**/*.test.{ts,tsx}'],
+    testTimeout: 15000,
+  },
 });
