@@ -7,6 +7,7 @@ import { FollowUpCard } from '@/components/followups/followup-card';
 import { ChannelBar } from '@/components/leads/channels/ChannelBar';
 import { CustomerExtras } from '@/components/leads/customer/CustomerExtras';
 import { OffersPanel } from '@/components/offers/OffersPanel';
+import { AiAssistCard } from '@/components/leads/ai/AiAssistCard';
 import { StageSelect } from '@/components/leads/stage/StageSelect';
 
 /** `headerActions` is shared: F07 stage select + F11 claim/assign. */
@@ -41,7 +42,7 @@ export const leadSlots: LeadSlots = {
   channels: ChannelBar as ComponentType<LeadSlotProps>,
   followUps: FollowUpCard as ComponentType<LeadSlotProps>,
   offers: OffersPanel as ComponentType<LeadSlotProps>,
-  ai: null,
+  ai: AiAssistCard as ComponentType<LeadSlotProps>,
   customerExtras: CustomerExtras as ComponentType<LeadSlotProps>,
   headerActions: HeaderActions as ComponentType<LeadSlotProps>,
   liveNote: UpdatedByNote as ComponentType<LeadSlotProps>,

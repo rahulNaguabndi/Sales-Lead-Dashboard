@@ -140,7 +140,8 @@ POST /api/leads/:id/ai/suggest      body: {"regenerate": false}
 POST /api/leads/:id/ai/draft        body: {"channel":"WHATSAPP"|"SMS"|"EMAIL","regenerate":false}
 200 {"source":"AI","cached":false,"generatedAt":…,"draft":{"channel":"WHATSAPP","language":"it","subject":null,"body":"Ciao Giulia! …","offerId":"off_01J…"}}
 Fallback: same shape with "source":"RULES","fallbackReason":"NO_API_KEY"|"TIMEOUT"|"API_ERROR"|"REFUSAL"|"MAX_TOKENS"|"INVALID_OUTPUT"|"RATE_LIMITED"
-403 OUT_OF_SCOPE · 404 NOT_FOUND
+POST /api/leads/:id/ai/feedback     body: {"kind":"suggest"|"draft","fingerprint":"…","vote":"up"|"down"}  → 204 (logged only)
+403 OUT_OF_SCOPE · 404 NOT_FOUND · 409 LEAD_CLOSED (draft on a WON/LOST lead)
 ```
 
 **Module layout (`server/services/ai/`)**
