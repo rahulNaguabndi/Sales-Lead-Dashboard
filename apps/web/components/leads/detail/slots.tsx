@@ -1,6 +1,7 @@
 import type { ComponentType } from 'react';
 import type { LeadSlotProps } from './types';
 import { ActivityComposer } from '@/components/leads/composer';
+import { LeadHeaderAssign } from '@/components/leads/assign/LeadHeaderAssign';
 import { UpdatedByNote } from '@/components/live/UpdatedByNote';
 import { FollowUpCard } from '@/components/followups/followup-card';
 
@@ -28,6 +29,6 @@ export const leadSlots: LeadSlots = {
   offers: null,
   ai: null,
   customerExtras: null,
-  headerActions: null,
+  headerActions: LeadHeaderAssign as ComponentType<LeadSlotProps>,
   liveNote: UpdatedByNote as ComponentType<LeadSlotProps>,
 };

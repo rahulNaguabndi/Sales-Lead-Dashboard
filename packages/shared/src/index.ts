@@ -11,3 +11,4 @@ export * from './schemas/activity';
 export * from './schemas/lead-filters';
 export * from './scoring';
 export * from './followup-rules';
+export * from './schemas/assignment';

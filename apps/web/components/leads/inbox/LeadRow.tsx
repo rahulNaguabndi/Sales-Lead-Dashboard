@@ -4,6 +4,7 @@ import { VEHICLES, type ActivityType } from '@leaddesk/shared';
 import type { LeadListItem } from '@/server/services/lead-query';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { cn } from '@/lib/utils';
+import { ClaimButton } from '@/components/leads/assign/ClaimButton';
 import { PriorityDot } from './PriorityDot';
 import { formatAge, RelativeTime } from './RelativeTime';
 import { SourceBadge } from './SourceBadge';
@@ -73,6 +74,9 @@ export function LeadRow({
       onClick={() => onOpen(item.id)}
       onKeyDown={(e) => {
         if (e.key === 'Enter') onOpen(item.id);
+        if ((e.key === 'c' || e.key === 'C') && !item.owner && e.target === e.currentTarget) {
+          e.currentTarget.querySelector<HTMLButtonElement>('[data-testid="claim-button"]')?.click();
+        }
       }}
       className={cn(
         'h-10 cursor-pointer border-b border-slate-800 hover:bg-slate-900 focus:bg-slate-900 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500',
@@ -140,6 +144,7 @@ export function LeadRow({
         )}
       </td>
       <td className="whitespace-nowrap px-2 pr-3 text-right">
+        {!item.owner && <ClaimButton leadId={item.id} />}
         <NextFollowUp at={item.nextFollowUpAt} overdue={flags.overdue} now={now} />
       </td>
     </tr>
