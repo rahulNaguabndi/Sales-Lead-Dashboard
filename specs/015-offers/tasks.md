@@ -55,8 +55,8 @@
 ## Phase 8: Polish & cross-cutting
 
 - [X] T020 Write the Playwright journey in `apps/web/e2e/offers.spec.ts` (uses `PORT`): the VP creates "Autumn Finance 0,9 %" (finance, DE/AT); the rep opens a matching DE finance lead and sees it; the rep's `POST /api/offers` returns 403; the expired seeded offer never appears in the strip.
-- [ ] T021 [P] Run `npm run typecheck`, `npm run lint`, `npm test`, `npm run test:e2e`; verify Redis-off degradation (cache falls through) and fix issues in owned paths.
-- [ ] T022 [P] Run the `specs/015-offers/quickstart.md` scenarios and mark each spec acceptance scenario in the report.
+- [x] T021 [P] Run `npm run typecheck`, `npm run lint`, `npm test`, `npm run test:e2e`; verify Redis-off degradation (cache falls through) and fix issues in owned paths.
+- [x] T022 [P] Run the `specs/015-offers/quickstart.md` scenarios and mark each spec acceptance scenario in the report.
 
 ## Dependencies
 
