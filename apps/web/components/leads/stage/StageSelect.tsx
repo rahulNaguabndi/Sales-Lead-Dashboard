@@ -2,7 +2,7 @@
 
 import { useCallback } from 'react';
 import { ChevronDown } from 'lucide-react';
-import { STAGES, STAGE_LABELS, allowedTargets, type Stage } from '@leaddesk/shared';
+import { STAGES, STAGE_LABELS, allowedTargets, canReopen, type Stage } from '@leaddesk/shared';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -21,7 +21,7 @@ export function StageSelect({ lead, permissions, currentUser }: LeadSlotProps) {
   const send = useCallback((_l: ChangeTarget, body: Parameters<typeof mutate>[0]) => mutate(body), [mutate]);
   const { request, dialogs } = useStageChanger({ send });
 
-  const isReopenable = lead.stage === 'LOST' && currentUser.role !== 'REP';
+  const isReopenable = lead.stage === 'LOST' && canReopen(currentUser.role);
   const canAct = permissions.canChangeStage || isReopenable;
   const enabled = new Set<Stage>(allowedTargets(lead.stage, currentUser.role));
   const target: ChangeTarget = {

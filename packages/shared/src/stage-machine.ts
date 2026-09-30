@@ -48,3 +48,8 @@ export const STAGE_LABELS: Record<Stage, string> = {
 export function allowedTargets(from: Stage, actor: StageActor): Stage[] {
   return TRANSITIONS[from].filter((to) => canTransition(from, to, actor));
 }
+
+/** Manager+ only: reopening a LOST lead (also gates manager-only UI such as the owner filter). */
+export function canReopen(actor: StageActor): boolean {
+  return allowedTargets('LOST', actor).length > 0;
+}

@@ -20,6 +20,7 @@ import {
   PRIORITIES,
   STAGE_LABELS,
   allowedTargets,
+  canReopen,
   formatEUR,
   type Role,
   type Stage,
@@ -178,7 +179,7 @@ export function KanbanBoard({
     <div className="flex h-full flex-col gap-3 p-4">
       <div className="flex flex-wrap items-center gap-2">
         <h1 className="mr-2 text-lg font-semibold">Pipeline</h1>
-        {owners.length > 0 && role !== 'REP' && (
+        {owners.length > 0 && canReopen(role) && (
           <select aria-label="Owner" className={selectCls} value={filters.owner} onChange={set('owner')}>
             <option value="">All owners</option>
             {owners.map((o) => (

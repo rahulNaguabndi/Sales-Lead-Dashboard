@@ -1,17 +1,22 @@
 # F07 Build Report
-Status: SPECCED
-Branch: 007-stage-pipeline · Commits: 1 (spec)
+Status: DONE
+Branch: 007-stage-pipeline · Commits: 4+
 ## Acceptance scenarios
 | Story/Scenario | Result | Evidence |
 |---|---|---|
-| US1–US6 | ❌ not built | spec-only run; covered by tasks T003–T021 |
+| US1 change stage (detail) | ✅ | stage-service/stage-route-rbac tests; e2e US1 |
+| US2 Won | ✅ | stage-service tests, stage-money.test.ts |
+| US3 Lost | ✅ | stage-service tests |
+| US4 Reopen/revive | ✅ | stage-service + RBAC tests |
+| US5 Concurrency (409) | ✅ | stage-service tests; use-stage-mutation handling (🟡 UI) |
+| US6 Kanban | ✅ | listPipeline tests; e2e US6 drag persists |
 ## Checks
-typecheck: n/a · lint: n/a · unit: n/a · e2e: n/a
+typecheck: pass · lint: pass · unit: 885/885 · e2e: 2/2 (pipeline spec, PORT=3107)
 ## Assumptions made (see assumptions.md)
-Cold manual = manager+ only; `GET /api/pipeline` dedicated endpoint; F09/F15 behind local stubs.
+Cold manual = manager+ only; dedicated `GET /api/pipeline`; F09/F15 behind local stubs.
 ## Deviations from spec
-None. Analysis pass: all FRs (001–013) and SC-001–003 map to tasks; SC-004 belongs to F16. No CRITICAL/HIGH findings.
+None. Added `canReopen` helper (append-only) in shared stage-machine so UI avoids role comparisons (SC-004 guard).
 ## Requires F01 / other-feature changes
-Optional: DB CHECK for WON deal_value / LOST reason (SC-003) would need an F01 migration; service-level enforcement used instead.
+Optional DB CHECK for WON deal_value / LOST reason; service-level enforcement used.
 ## Known issues / follow-ups
-Implementation not started.
+Full e2e suite not run, only pipeline spec. Needed `npm run db:reset` in the worktree for e2e.
