@@ -1,0 +1,20 @@
+:root {
+  --dash-1: #2563eb;
+  --dash-2: #0d9488;
+  --dash-3: #d97706;
+  --dash-4: #7c3aed;
+  --dash-5: #db2777;
+  --dash-6: #64748b;
+  --dash-good: #15803d;
+  --dash-bad: #b91c1c;
+}
+.dark {
+  --dash-1: #60a5fa;
+  --dash-2: #2dd4bf;
+  --dash-3: #fbbf24;
+  --dash-4: #a78bfa;
+  --dash-5: #f472b6;
+  --dash-6: #94a3b8;
+  --dash-good: #4ade80;
+  --dash-bad: #f87171;
+}
