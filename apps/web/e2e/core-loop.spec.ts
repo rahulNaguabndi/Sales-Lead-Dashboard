@@ -114,6 +114,7 @@ test('UI: empty note keeps submit disabled', async ({ page }) => {
   await page.getByLabel('Email').fill(SOFIA);
   await page.locator('input[type=password]').fill('demo1234');
   await page.getByRole('button', { name: 'Sign in' }).click();
+  await expect(page).not.toHaveURL(/\/login/);
   const lead = sofiaLead();
   const response = await page.goto(`/leads/${lead.id}`);
   const composer = page.getByRole('button', { name: 'Log an activity…' });

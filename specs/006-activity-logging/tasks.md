@@ -25,13 +25,13 @@
 - [X] T010 [P] [US1] Create `web/components/leads/composer/TypeSegmentedControl.tsx` (radiogroup, icon + text labels, keys 1–7) and `OutcomeSelect.tsx`.
 - [X] T011 [US1] Create `web/components/leads/composer/useLogActivity.ts`: TanStack `useMutation` with `onMutate` optimistic insert into `['lead', id, 'activities', …]`, `onError` rollback + toast "Couldn't save activity. Your note is kept", `onSuccess` replace with server rows, patch `['lead', id]`, invalidate `['leads']` (FR-007); ULID `clientRequestId` per attempt.
 - [X] T012 [US1] Create `web/components/leads/composer/ActivityComposer.tsx` (collapsed "Log an activity…" input, note textarea with counter, Log activity button with Ctrl/⌘+Enter, Esc-clear with confirm, reset keeping type, focus back to note) and `index.ts`; register in `web/components/leads/detail/slots.tsx` as `leadSlots.composer` (append-only).
-- [ ] T013 [US1] Write Playwright `web/tests/e2e/core-loop.spec.ts` (use `PORT`): login as Sofia → inbox → first lead → log Call/Connected "Called customer" → top of timeline → reload → still present → inbox row shows "Call · just now".
+- [X] T013 [US1] Write Playwright `web/tests/e2e/core-loop.spec.ts` (use `PORT`): login as Sofia → inbox → first lead → log Call/Connected "Called customer" → top of timeline → reload → still present → inbox row shows "Call · just now".
 
 ## Phase 4: US2 — Validation that helps (P1)
 
 - [X] T014 [P] [US2] Add integration tests: empty/whitespace note → 400; Note + outcome → 400; Call without outcome → 400; 2001 chars → 400 in `web/tests/integration/activity-validation.test.ts`.
 - [X] T015 [US2] Wire client-side validation into the composer using the shared schema (disabled submit, inline field errors, red counter, outcome hidden for Note, optional for Meeting/Test drive) in `web/components/leads/composer/ActivityComposer.tsx`.
-- [ ] T016 [US2] Add second e2e test "empty note → submit disabled" to `web/tests/e2e/core-loop.spec.ts`.
+- [X] T016 [US2] Add second e2e test "empty note → submit disabled" to `web/tests/e2e/core-loop.spec.ts`.
 
 ## Phase 5: US3 — Automatic lead bookkeeping (P1)
 
@@ -64,8 +64,8 @@
 
 ## Phase 10: Polish
 
-- [ ] T031 Run `npm run typecheck`, `npm run lint`, `npm test`, `npm run test:e2e`; fix failures from this feature only.
-- [ ] T032 Amend `docs/features/F06-activity-logging.md` if behavior deviates; write `specs/006-activity-logging/REPORT.md`.
+- [X] T031 Run `npm run typecheck`, `npm run lint`, `npm test`, `npm run test:e2e`; fix failures from this feature only.
+- [X] T032 Amend `docs/features/F06-activity-logging.md` if behavior deviates; write `specs/006-activity-logging/REPORT.md`.
 
 ## Dependencies & Order
 
