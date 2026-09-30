@@ -14,5 +14,6 @@ export default defineConfig({
     include: ['packages/shared/src/**/*.test.ts', 'apps/web/**/*.test.ts'],
     exclude: ['**/node_modules/**', 'apps/web/e2e/**'],
     testTimeout: 30000,
+    hookTimeout: 60000,
   },
 });

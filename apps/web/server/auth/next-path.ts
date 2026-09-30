@@ -1,7 +1,9 @@
 import type { Role } from '@leaddesk/shared';
 
+const ROLE_HOME: Partial<Record<Role, string>> = { REP: '/inbox' };
+
 export function roleHome(role: Role): string {
-  return role === 'REP' ? '/inbox' : '/dashboard';
+  return ROLE_HOME[role] ?? '/dashboard';
 }
 
 /** Returns `next` only if it is a same-origin absolute path; otherwise the role home. */
