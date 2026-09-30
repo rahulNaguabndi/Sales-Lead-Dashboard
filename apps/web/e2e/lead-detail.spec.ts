@@ -40,7 +40,7 @@ test('rep opens a lead, toggles timeline order and the preference persists', asy
   await signIn(page.request, email);
   const lead = leadFor(email, true);
   await page.goto(`/leads/${lead.id}`);
-  await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
+  await expect(page.locator('main h1')).toBeVisible();
   await expect(page.getByText(lead.reference).first()).toBeVisible();
 
   const feed = page.getByRole('feed');
