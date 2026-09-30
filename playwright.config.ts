@@ -9,6 +9,7 @@ export default defineConfig({
     command: 'npm run dev:web',
     url: `http://localhost:${port}`,
     reuseExistingServer: true,
-    timeout: 120000,
+    // Next.js cold compile on Windows can exceed 2 min, especially with several worktrees building in parallel.
+    timeout: 300000,
   },
 });
