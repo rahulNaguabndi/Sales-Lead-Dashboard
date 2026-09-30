@@ -1,6 +1,6 @@
 # F02 Build Report
 Status: SPECCED
-Branch: 002-authentication · Commits: 2 (spec + report)
+Branch: 002-authentication · Commits: 1 (spec, plan, tasks, report)
 ## Acceptance scenarios
 | Story/Scenario | Result | Evidence |
 |---|---|---|
