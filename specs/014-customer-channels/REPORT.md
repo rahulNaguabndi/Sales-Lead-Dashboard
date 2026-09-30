@@ -1,23 +1,27 @@
 # F14 Build Report
-Status: SPECCED
-Branch: 014-customer-channels · Commits: 2
+Status: DONE
+Branch: 014-customer-channels · Commits: 6+
 
 ## Acceptance scenarios
 | Story/Scenario | Result | Evidence |
 |---|---|---|
-| US1–US5 | ❌ not built | spec-only run; tests planned in tasks.md (T003–T034) |
+| US1 channel bar / deep links | ✅ | unit tests + e2e customer-channels.spec.ts (WhatsApp, Call tel:) |
+| US2 templates & language fallback | ✅ | unit tests + e2e "language switch and English fallback" |
+| US3 preferences edit | ✅ | service/route tests, EditPreferencesDialog |
+| US4 timezone hints / extras | ✅ | shared unit tests |
+| US5 RBAC | ✅ | RBAC route tests |
 
 ## Checks
-typecheck: n/a · lint: n/a · unit: n/a · e2e: n/a
+typecheck: pass · lint: pass · unit: 622/622 · e2e: 3/3 (customer-channels; run with DATABASE_URL=./data/f14.db)
 
 ## Assumptions made (see assumptions.md)
-13 entries; notably #11 (`leadId` added to GET query / PATCH body for RBAC and the NOTE activity).
+13 entries; #11 adds `leadId` to GET query / PATCH body.
 
 ## Deviations from spec
-Endpoint contracts add `leadId` (docs/features/F14 §9 to be amended, task T038).
+Endpoint contracts add `leadId` (contract doc amended).
 
 ## Requires F01 / other-feature changes
-None. Hard deps F05 (slots) and F06 (composer prefill) are not on this branch; the plan codes against their interfaces (T001).
+None.
 
 ## Known issues / follow-ups
-Analysis run once; one HIGH finding (contract lacked lead context) fixed via assumptions #11 and T038. No CRITICAL findings. Implementation not started.
+e2e helper reads DATABASE_URL relative to apps/web; set it in worktrees with a non-default DB.

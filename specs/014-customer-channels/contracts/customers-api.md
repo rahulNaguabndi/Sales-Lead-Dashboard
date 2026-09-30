@@ -14,7 +14,7 @@ Authorizes `lead:read` on the given lead, which must belong to the customer (404
                "leads": [{ "id": "l_9", "reference": "EDM-2024-00123", "stage": "WON", "createdAt": 1700000000000, "ownerName": "Luca Romano", "inScope": true },
                          { "reference": "EDM-2023-00044", "stage": "LOST", "createdAt": 1690000000000, "inScope": false }] } }
 ```
-Errors: 401, 403 (lead out of scope), 404.
+Errors: 401, 404 (lead out of scope, missing, or not the customer's; the F03 policy hides existence).
 
 ## PATCH /api/customers/:id
 Body (at least one preference field plus `leadId`):

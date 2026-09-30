@@ -1,7 +1,6 @@
 'use client';
 
 import { useState } from 'react';
-import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
 import { BEST_TIMES, CHANNELS, LANGUAGES, type BestTime, type Channel } from '@leaddesk/shared';
 import { Button } from '@/components/ui/button';
@@ -31,7 +30,6 @@ export function EditPreferencesDialog({
   customer: LeadSlotProps['customer'];
   onSaved?: () => void;
 }) {
-  const router = useRouter();
   const [open, setOpen] = useState(false);
   const [preferred, setPreferred] = useState<Channel>(customer.preferredChannel);
   const [secondary, setSecondary] = useState<Channel | ''>(customer.secondaryChannel ?? '');
@@ -65,7 +63,7 @@ export function EditPreferencesDialog({
       toast.success('Preferences updated');
       setOpen(false);
       onSaved?.();
-      router.refresh();
+      window.location.reload(); // re-renders the card, timeline note and templates
     } catch {
       setError('Could not save preferences');
     } finally {
