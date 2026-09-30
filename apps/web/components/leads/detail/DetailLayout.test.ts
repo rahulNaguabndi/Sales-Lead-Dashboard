@@ -92,7 +92,7 @@ describe('DetailLayout slots', () => {
     expect(html.indexOf('SLOT-')).toBeGreaterThan(right);
   });
 
-  it('shows the claim prompt read-only when the user cannot log activity but can claim', () => {
-    expect(render(leadSlots)).toContain('Claim this lead to work on it');
+  it('shows the claim prompt (composer read-only note) when the user cannot log activity but can claim', () => {
+    expect(render(leadSlots)).toContain('Claim this lead to log activities');
   });
 });

@@ -125,7 +125,9 @@ test('UI: log a call from the lead page, reload, entry is still there', async ({
   await expect(page.getByText('Called customer').first()).toBeVisible();
 
   await page.goto('/inbox');
-  await expect(page.getByText(/Call · just now/).first()).toBeVisible();
+  await expect(
+    page.locator(`[data-lead-id="${lead.id}"]`).getByText(/Called · (just )?now/),
+  ).toBeVisible();
 });
 
 test('UI: empty note keeps submit disabled', async ({ page }) => {
