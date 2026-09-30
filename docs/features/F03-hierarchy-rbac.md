@@ -194,7 +194,13 @@ Also: a `leadScopeWhere` test returns exactly the ids visible per rows 1–4, 16
 - Claim and assign **execution** (F11). F03 only decides.
 
 ## 11. Open Questions
-- Should managers be able to assign to reps in a *peer* team? Proposed: no. Only the VP (or anyone higher) can move leads across teams.
+- ~~Should managers be able to assign to reps in a *peer* team?~~ **Resolved: no.** Only the VP (or anyone higher) can move leads across teams (enforced and tested).
+
+## 11a. Implementation Notes (as built)
+- `authorize`/`can` accept an optional 4th argument `{ scope?, database? }` for tests and callers already holding the scope. `withAuthz` accepts an optional `resolveUser` (defaults to `getCurrentUser`, 401 when null) until F02's `requireUser` lands.
+- Claim-limit denial throws `ClaimLimitReachedError` (403, code `CLAIM_LIMIT_REACHED`), exported from the policy barrel.
+- `Resource.targetUser: null` means unassign; `undefined` on `lead:assign` is denied.
+- `lead:assign` by a MANAGER is limited to REP targets or themselves.
 
 ## 12. Spec Kit Prompts
 **`/speckit.specify`**
