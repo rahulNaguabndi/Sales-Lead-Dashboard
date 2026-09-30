@@ -2,6 +2,7 @@ import type { ComponentType } from 'react';
 import type { LeadSlotProps } from './types';
 import { ActivityComposer } from '@/components/leads/composer';
 import { UpdatedByNote } from '@/components/live/UpdatedByNote';
+import { StageSelect } from '@/components/leads/stage/StageSelect';
 
 export type LeadSlotName =
   | 'composer'
@@ -27,6 +28,6 @@ export const leadSlots: LeadSlots = {
   offers: null,
   ai: null,
   customerExtras: null,
-  headerActions: null,
+  headerActions: StageSelect as ComponentType<LeadSlotProps>,
   liveNote: UpdatedByNote as ComponentType<LeadSlotProps>,
 };

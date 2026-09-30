@@ -8,11 +8,17 @@ const label = (v: string) => v.replace(/_/g, ' ').toLowerCase();
 const FORMATTERS: Record<string, (m: Record<string, unknown>) => string> = {
   LEAD_CREATED: (m) => (str(m.source) ? `Lead created from ${label(str(m.source)!)}` : 'Lead created'),
   STAGE_CHANGED: (m) =>
-    str(m.from) && str(m.to)
-      ? `Stage changed from ${label(str(m.from)!)} to ${label(str(m.to)!)}`
-      : str(m.to)
-        ? `Stage changed to ${label(str(m.to)!)}`
-        : 'Stage changed',
+    m.reopened === true
+      ? 'Reopened'
+      : m.to === 'WON' && typeof m.dealValue === 'number'
+        ? `Won · ${formatEUR(m.dealValue)}${str(m.vehicleModel) ? ` · ${label(str(m.vehicleModel)!)}` : ''}`
+        : m.to === 'LOST' && str(m.lostReason)
+          ? `Lost · ${label(str(m.lostReason)!)}`
+          : str(m.from) && str(m.to)
+            ? `Stage changed from ${label(str(m.from)!)} to ${label(str(m.to)!)}`
+            : str(m.to)
+              ? `Stage changed to ${label(str(m.to)!)}`
+              : 'Stage changed',
   ASSIGNED: (m) => (str(m.toName) ? `Assigned to ${str(m.toName)}` : 'Lead assigned'),
   CLAIMED: (m) => (str(m.byName) ? `Claimed by ${str(m.byName)}` : 'Lead claimed'),
   FOLLOW_UP_SCHEDULED: (m) =>
