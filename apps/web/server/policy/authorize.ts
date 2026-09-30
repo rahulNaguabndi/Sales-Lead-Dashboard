@@ -101,6 +101,10 @@ async function leadRule(
       return newTeamId ? { allowed: true, newTeamId } : { allowed: true };
     }
 
+    case 'lead:changeStage':
+      if (isRep && lead.ownerId !== user.id) deny('Only the lead owner can do this');
+      return { allowed: true };
+
     case 'lead:reopen':
       if (isRep) deny('Only managers can reopen leads');
       return { allowed: true };

@@ -4,6 +4,7 @@ export const ACTIONS = [
   'lead:claim',
   'lead:assign',
   'lead:reopen',
+  'lead:changeStage',
   'team:read',
   'team:settings',
   'dashboard:personal',
@@ -24,6 +25,7 @@ export const MUTATION_ACTIONS: ReadonlySet<Action> = new Set<Action>([
   'lead:claim',
   'lead:assign',
   'lead:reopen',
+  'lead:changeStage',
   'team:settings',
   'offer:manage',
 ]);

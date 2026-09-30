@@ -32,3 +32,19 @@ export function autoAdvance(stage: Stage, type: ActivityType, kind: ActivityKind
   if (!isContactActivity(type, kind)) return null;
   return stage === 'NEW' || stage === 'COLD' ? 'CONTACTED' : null;
 }
+
+export const STAGE_LABELS: Record<Stage, string> = {
+  NEW: 'New',
+  CONTACTED: 'Contacted',
+  QUALIFIED: 'Qualified',
+  TEST_DRIVE: 'Test drive',
+  NEGOTIATION: 'Negotiation',
+  WON: 'Won',
+  LOST: 'Lost',
+  COLD: 'Cold',
+};
+
+/** Stages the actor may move a lead to from `from` (same-stage excluded). */
+export function allowedTargets(from: Stage, actor: StageActor): Stage[] {
+  return TRANSITIONS[from].filter((to) => canTransition(from, to, actor));
+}

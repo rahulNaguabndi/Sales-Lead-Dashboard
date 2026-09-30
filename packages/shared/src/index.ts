@@ -10,3 +10,4 @@ export * from './schemas/intake';
 export * from './schemas/activity';
 export * from './schemas/lead-filters';
 export * from './scoring';
+export * from './schemas/stage';
