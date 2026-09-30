@@ -63,7 +63,9 @@ function Get-FeatureInfo([string]$id) {
 }
 
 function Get-ReportStatus([string]$branch) {
-  $path = git ls-tree -r --name-only $branch -- specs 2>$null | Where-Object { $_ -like '*/REPORT.md' } | Select-Object -First 1
+  # Match this feature's own spec dir only: branches also contain earlier waves' reports merged in from main.
+  $num = $branch.Substring(0, 3)
+  $path = git ls-tree -r --name-only $branch -- specs 2>$null | Where-Object { $_ -like "specs/$num-*/REPORT.md" } | Select-Object -First 1
   if (-not $path) { return 'NO-REPORT' }
   $text = git show "${branch}:$path" 2>$null | Out-String
   if ($text -match 'Status:\s*(DONE|PARTIAL|BLOCKED|SPECCED)') { return $Matches[1] }
