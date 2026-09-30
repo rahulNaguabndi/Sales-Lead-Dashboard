@@ -124,6 +124,7 @@ export interface ScoreResult {
 | D4 | A timeline entry only on band change | Every score change | Avoids timeline spam, keeps traceability of what matters |
 | D5 | A plain website lead with full intent maxes at 65 (WARM). HOT at intake needs a high-quality source or a returning customer | Lower the HOT threshold | HOT stays meaningful. It becomes HOT as soon as engagement is positive |
 | D6 | SLA targets: 15 min HOT / 2 h others | One target for all | Industry practice: the fastest response wins hot leads |
+| D7 | Thresholds stay 70/40 although the seeded open-lead mix lands near HOT 2% / WARM 32% / COOL 66% (SC-003 asks 15–25 / 40–55 / 25–40) | Retune thresholds to hit SC-003 | Worked examples A, A', D and boundary G fix the bands. Most seed leads are old with little intent, so the fix belongs in the seed generator (F01), not in F09 |
 
 ## 9. Technical Plan Input (for `/speckit.plan`)
 

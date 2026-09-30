@@ -192,7 +192,7 @@ Errors: `400 {error:{code:"VALIDATION_ERROR",message,fields}}` and `401 {error:{
 **Tests**
 - Unit (Vitest): the ranking comparator fixture; SLA computation boundaries (14:59 vs 15:01 min HOT, 1:59 vs 2:01 h WARM); query-param parsing; search normalization (phone digits).
 - Integration: an RBAC matrix for REP (Sofia), MANAGER (Lukas), VP (Isabelle) × every view → assert all returned `owner.id`/team are within scope; out-of-scope owner filter → 0 foreign rows; pagination totals.
-- E2E (Playwright, shared with F05/F06, file `tests/e2e/core-loop.spec.ts`): login as Sofia → `/inbox` shows My Leads with ≥ 1 row → click the first row → lead detail opens → log activity "Called customer" (outcome Connected) → it appears at the top of the timeline → reload → still present → back to inbox → the row's last-activity reads "Called · just now". *(R1 → R2 → R3)*
+- E2E (Playwright, shared with F05/F06, file `apps/web/e2e/core-loop.spec.ts`): login as Sofia → `/inbox` shows My Leads with ≥ 1 row → click the first row → lead detail opens → log activity "Called customer" (outcome Connected) → it appears at the top of the timeline → reload → still present → back to inbox → the row's last-activity reads "Called · just now". *(R1 → R2 → R3)*
 - Performance: seed 800 leads, run each view 20×, assert p95 < 300 ms.
 
 ## 10. Out of Scope
