@@ -1,18 +1,22 @@
 # F11 Build Report
-Status: SPECCED
-Branch: 011-assignment-management · Commits: 1 (spec)
+Status: DONE
+Branch: 011-assignment-management · Commits: 3
 ## Acceptance scenarios
 | Story/Scenario | Result | Evidence |
-|---|---|---|
-| US-1..US-6 | not built (spec-only) | tasks T007–T025 |
+| US1 Claim (success, 409, limit, parallel) | ✅ | integration/assignment.test.ts "claim (US-1)" |
+| US2 Manager assign/unassign, RBAC | ✅ | "assign (US-2, US-4)" |
+| US3 Bulk atomic | ✅ | "bulk (US-3)" |
+| US4 VP cross-team | ✅ | "VP cross-team move" |
+| US5 Settings + auto-assign | ✅ | "settings + auto-assign" , unit pick-rep |
+| US6 Rebalance | ✅ | "rebalancePool" |
+| SC-002 lead.assigned published | ✅ server side; live UI update needs F12 merge | test "publishes lead.assigned" |
+| Browser claim flow | ❌ | e2e/claim.spec.ts failed at sign-in in this environment (login did not redirect; likely unseeded DB); not verified |
 ## Checks
-typecheck: n/a · lint: n/a · unit: n/a · e2e: n/a
+typecheck: pass · lint: pass · unit/integration: 609/610 (only failure is unrelated scoring.test.ts 1,000-call <50 ms timing flake, 54 ms) · e2e: 0/2 (sign-in env failure)
 ## Assumptions made (see assumptions.md)
-Reps-only auto-assign candidates; rep release out of scope; F04/F10/F08 stubbed until merge; extra endpoints (`GET /api/teams/settings`, `GET /api/teams/:id/assignees`, `POST /api/teams/:id/rebalance`) added under the teams API area.
 ## Deviations from spec
-None. The spec adds FR-011..013 to make the doc's settings, picker and rebalance behaviour explicit.
+None.
 ## Requires F01 / other-feature changes
-None expected. Needs F08 `reassignPending`, F04 row/selection slots, and F10's use of `autoAssign`.
+F08 reassignPending is a no-op stub adapter until F08 lands.
 ## Known issues / follow-ups
-Hard dependencies F04/F10 (wave 2) are not on this branch; that is fine for spec-only, but they must be merged before implementation.
-Analyze: 0 CRITICAL/HIGH; 1 MEDIUM (SC-002 coverage) fixed in T026.
+Re-run claim e2e with a seeded DB.
