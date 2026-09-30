@@ -1,5 +1,6 @@
 import type { ComponentType } from 'react';
 import type { LeadSlotProps } from './types';
+import { ActivityComposer } from '@/components/leads/composer';
 
 export type LeadSlotName =
   | 'composer'
@@ -18,7 +19,7 @@ export type LeadSlots = Record<LeadSlotName, ComponentType<LeadSlotProps> | null
  * F18 ai, F07/F11 headerActions). Null renders nothing.
  */
 export const leadSlots: LeadSlots = {
-  composer: null,
+  composer: ActivityComposer as ComponentType<LeadSlotProps>,
   channels: null,
   followUps: null,
   offers: null,
