@@ -33,10 +33,50 @@ export const DACH = {
 };
 
 export const LEADERBOARD = {
-  anna: { open: 5, newInPeriod: 4, contacted: 2, coveragePct: 50, avgFrtMinutes: 45, slaBreaches: 4, overdue: 0, won: 1, revenueCents: 3_890_000 },
-  felix: { open: 2, newInPeriod: 2, contacted: 1, coveragePct: 50, avgFrtMinutes: 55, slaBreaches: 1, overdue: 2, won: 0, revenueCents: 0 },
-  jonas: { open: 2, newInPeriod: 3, contacted: 2, coveragePct: 66.7, avgFrtMinutes: 65, slaBreaches: 0, overdue: 1, won: 0, revenueCents: 0 },
-  lea: { open: 2, newInPeriod: 1, contacted: 1, coveragePct: 100, avgFrtMinutes: 45, slaBreaches: 0, overdue: 0, won: 0, revenueCents: 0 },
+  anna: {
+    open: 5,
+    newInPeriod: 4,
+    contacted: 2,
+    coveragePct: 50,
+    avgFrtMinutes: 45,
+    slaBreaches: 4,
+    overdue: 0,
+    won: 1,
+    revenueCents: 3_890_000,
+  },
+  felix: {
+    open: 2,
+    newInPeriod: 2,
+    contacted: 1,
+    coveragePct: 50,
+    avgFrtMinutes: 55,
+    slaBreaches: 1,
+    overdue: 2,
+    won: 0,
+    revenueCents: 0,
+  },
+  jonas: {
+    open: 2,
+    newInPeriod: 3,
+    contacted: 2,
+    coveragePct: 66.7,
+    avgFrtMinutes: 65,
+    slaBreaches: 0,
+    overdue: 1,
+    won: 0,
+    revenueCents: 0,
+  },
+  lea: {
+    open: 2,
+    newInPeriod: 1,
+    contacted: 1,
+    coveragePct: 100,
+    avgFrtMinutes: 45,
+    slaBreaches: 0,
+    overdue: 0,
+    won: 0,
+    revenueCents: 0,
+  },
 } as const;
 
 export const FUNNEL = {

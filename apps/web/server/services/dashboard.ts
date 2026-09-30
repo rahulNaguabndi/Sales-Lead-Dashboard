@@ -10,7 +10,6 @@ import {
   type DashboardPeriod,
   type DashboardScopeInfo,
   type FunnelResponse,
-  type Kpi,
   type LeaderboardResponse,
   type LeadsOverTimeResponse,
   type LostReasonsResponse,
@@ -641,13 +640,13 @@ export async function getLeaderboard(
   const rf = await resolveFilters(ctx, filters, deps);
   if (!rf.teamIds || rf.teamIds.length === 0) throw new InvalidFilterError('teamId is required');
   const perf = performance(database, rf, 'owner_id', now);
-  const users = database.all<{ id: string; name: string; role: string }>(sql`
-    SELECT id, name, role FROM users
+  const users = database.all<{ id: string; name: string; is_rep: number }>(sql`
+    SELECT id, name, (role = 'REP') AS is_rep FROM users
     WHERE team_id IN (${list(rf.teamIds)}) ${rf.ownerId ? sql`AND id = ${rf.ownerId}` : sql``}
     ORDER BY name
   `);
   const rows = users
-    .filter((u) => u.role === 'REP' || perf.has(u.id))
+    .filter((u) => u.is_rep === 1 || perf.has(u.id))
     .map((u) => ({ userId: u.id, name: u.name, ...(perf.get(u.id) ?? EMPTY_ROW) }));
   return { ...envelope(rf, now), rows };
 }

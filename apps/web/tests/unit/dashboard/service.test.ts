@@ -28,7 +28,14 @@ describe('getSummary — manager (Team DACH)', () => {
     expect(s.scope.teamIds).toEqual(['dach']);
     expect(s.period.fromDate).toBe('2026-09-01');
     expect(s.generatedAt).toBe(NOW);
-    for (const k of ['newLeads', 'coveragePct', 'avgFrtMinutes', 'conversionPct', 'revenueCents', 'overdueFollowUps'] as const) {
+    for (const k of [
+      'newLeads',
+      'coveragePct',
+      'avgFrtMinutes',
+      'conversionPct',
+      'revenueCents',
+      'overdueFollowUps',
+    ] as const) {
       expect({ k, value: s.kpis[k].value, prev: s.kpis[k].prev }).toEqual({ k, ...DACH[k] });
     }
     expect(s.kpis.avgFrtMinutes.lowerIsBetter).toBe(true);
@@ -120,7 +127,13 @@ describe('getLeaderboard', () => {
   it('a rep with no leads gets nulls/zeros; the VP must pass a team', async () => {
     const r = await getLeaderboard(await fx.ctx('claire'), f(), deps());
     expect(r.rows).toHaveLength(1);
-    expect(r.rows[0]).toMatchObject({ name: 'emile', newInPeriod: 1, contacted: 0, coveragePct: 0, avgFrtMinutes: null });
+    expect(r.rows[0]).toMatchObject({
+      name: 'emile',
+      newInPeriod: 1,
+      contacted: 0,
+      coveragePct: 0,
+      avgFrtMinutes: null,
+    });
     await expect(getLeaderboard(await fx.ctx('isabelle'), f(), deps())).rejects.toMatchObject({
       code: 'INVALID_FILTER',
     });
@@ -140,8 +153,9 @@ describe('getTeamComparison', () => {
     expect(t.rows.map((r) => r.name)).toEqual(['Team DACH', 'Team SOUTH', 'Team WEST']);
     const dach = t.rows.find((r) => r.teamId === 'dach')!;
     const lb = await getLeaderboard(await fx.ctx('lukas'), f(), deps());
-    const sum = (k: 'open' | 'newInPeriod' | 'contacted' | 'slaBreaches' | 'overdue' | 'won' | 'revenueCents') =>
-      lb.rows.reduce((a, r) => a + r[k], 0);
+    const sum = (
+      k: 'open' | 'newInPeriod' | 'contacted' | 'slaBreaches' | 'overdue' | 'won' | 'revenueCents',
+    ) => lb.rows.reduce((a, r) => a + r[k], 0);
     // D10 is an unowned pool lead (open, new in period, NEW without contact → SLA breach)
     expect(dach.open).toBe(sum('open') + 1);
     expect(dach.newInPeriod).toBe(sum('newInPeriod') + 1);
@@ -151,7 +165,13 @@ describe('getTeamComparison', () => {
     expect(dach.won).toBe(sum('won'));
     expect(dach.revenueCents).toBe(sum('revenueCents'));
     const south = t.rows.find((r) => r.teamId === 'south')!;
-    expect(south).toMatchObject({ newInPeriod: 1, coveragePct: 100, avgFrtMinutes: 15, won: 1, revenueCents: 2_000_000 });
+    expect(south).toMatchObject({
+      newInPeriod: 1,
+      coveragePct: 100,
+      avgFrtMinutes: 15,
+      won: 1,
+      revenueCents: 2_000_000,
+    });
   });
 
   it('the team filter highlights a single row', async () => {
@@ -163,7 +183,14 @@ describe('getTeamComparison', () => {
 describe('getFunnel', () => {
   it('counts reach via stage_history (once per lead, even after backward moves) and current stage', async () => {
     const r = await getFunnel(await fx.ctx('lukas'), f(), deps());
-    expect(r.stages.map((s) => s.stage)).toEqual(['NEW', 'CONTACTED', 'QUALIFIED', 'TEST_DRIVE', 'NEGOTIATION', 'WON']);
+    expect(r.stages.map((s) => s.stage)).toEqual([
+      'NEW',
+      'CONTACTED',
+      'QUALIFIED',
+      'TEST_DRIVE',
+      'NEGOTIATION',
+      'WON',
+    ]);
     expect(Object.fromEntries(r.stages.map((s) => [s.stage, s.reached]))).toEqual(FUNNEL.reached);
     expect(Object.fromEntries(r.stages.map((s) => [s.stage, s.current]))).toEqual(FUNNEL.current);
   });
@@ -189,8 +216,19 @@ describe('getStageAging', () => {
 describe('sources, lost reasons, leads over time', () => {
   it('source volume, won/lost by close date, win rate and org rate', async () => {
     const r = await getSources(await fx.ctx('lukas'), f(), deps());
-    expect(r.rows[0]).toMatchObject({ source: 'WEBSITE', leads: 5, won: 0, lost: 3, winRatePct: 0 });
-    expect(r.rows.find((x) => x.source === 'REFERRAL')).toMatchObject({ leads: 1, won: 1, lost: 0, winRatePct: 100 });
+    expect(r.rows[0]).toMatchObject({
+      source: 'WEBSITE',
+      leads: 5,
+      won: 0,
+      lost: 3,
+      winRatePct: 0,
+    });
+    expect(r.rows.find((x) => x.source === 'REFERRAL')).toMatchObject({
+      leads: 1,
+      won: 1,
+      lost: 0,
+      winRatePct: 100,
+    });
     expect(r.rows.find((x) => x.source === 'PHONE')).toMatchObject({ leads: 1, winRatePct: null });
     expect(r.orgWinRatePct).toBe(25);
   });
