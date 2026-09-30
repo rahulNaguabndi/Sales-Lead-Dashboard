@@ -1,4 +1,5 @@
 import type { ComponentType } from 'react';
+import Link from 'next/link';
 import type { LeadSlotProps } from './types';
 import { ActivityComposer } from '@/components/leads/composer';
 import { LeadHeaderAssign } from '@/components/leads/assign/LeadHeaderAssign';
@@ -15,6 +16,15 @@ function HeaderActions(props: LeadSlotProps) {
     <div className="flex items-center gap-2">
       <StageSelect {...props} />
       <LeadHeaderAssign {...props} />
+      {(['MANAGER', 'VP'] as string[]).includes(props.currentUser.role) && (
+        <Link
+          href={`/audit?entity=lead&entityId=${props.lead.id}`}
+          className="text-sm underline"
+          data-testid="audit-trail-link"
+        >
+          Audit trail
+        </Link>
+      )}
     </div>
   );
 }
