@@ -72,7 +72,6 @@ describe('eligibleReps', () => {
     const row = (id: string, o: Partial<Parameters<typeof eligibleReps>[0][number]> = {}) => ({
       id,
       name: id,
-      role: 'REP',
       isActive: true,
       teamId: 't',
       maxOpenLeads: 2,
@@ -82,7 +81,6 @@ describe('eligibleReps', () => {
     const rows = [
       row('1', { openCount: 1 }),
       row('2', { isActive: false }),
-      row('3', { role: 'MANAGER' }),
       row('4', { openCount: 2 }),
       row('5', { teamId: 'x' }),
     ];

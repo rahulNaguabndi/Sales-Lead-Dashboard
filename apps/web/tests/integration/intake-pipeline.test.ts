@@ -8,14 +8,15 @@ let s: typeof import('@/server/db/client').schema;
 let ingestFn: typeof import('@/server/services/intake').ingest;
 let bus: typeof import('@/server/events/bus').bus;
 let IntakeLeadSchema: typeof import('@leaddesk/shared').IntakeLeadSchema;
-let OPEN: readonly string[];
+let OPEN: readonly string[] = [];
 
 beforeAll(async () => {
   await setupIntakeEnv();
   ({ db, schema: s } = await import('@/server/db/client'));
   ({ ingest: ingestFn } = await import('@/server/services/intake'));
   ({ bus } = await import('@/server/events/bus'));
-  ({ IntakeLeadSchema, OPEN_STAGES: OPEN as never } = await import('@leaddesk/shared'));
+  ({ IntakeLeadSchema } = await import('@leaddesk/shared'));
+  ({ OPEN_STAGES: OPEN } = await import('@leaddesk/shared'));
 });
 
 const ctx = { apiKeyName: 'showroom', ip: '1.2.3.4' };

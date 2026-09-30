@@ -1,5 +1,5 @@
 import { randomUUID } from 'node:crypto';
-import { asc, eq, inArray, sql } from 'drizzle-orm';
+import { and, asc, eq, inArray, sql } from 'drizzle-orm';
 import { OPEN_STAGES, type AssignStrategy } from '@leaddesk/shared';
 import type { Tx } from '../db/client';
 import { getRedis, redisStatus } from '../redis/client';
@@ -64,18 +64,15 @@ export function selectRoundRobin(cands: Candidate[], cursor: string | null): Can
 type RepRow = {
   id: string;
   name: string;
-  role: string;
   isActive: boolean;
   teamId: string | null;
   maxOpenLeads: number;
   openCount: number;
 };
 
-/** Active REPs of the team who are below their open-lead capacity. */
+/** Active reps of the team who are below their open-lead capacity (rows are already REP-only). */
 export function eligibleReps<T extends RepRow>(rows: T[], teamId: string): T[] {
-  return rows.filter(
-    (r) => r.role === 'REP' && r.isActive && r.teamId === teamId && r.openCount < r.maxOpenLeads,
-  );
+  return rows.filter((r) => r.isActive && r.teamId === teamId && r.openCount < r.maxOpenLeads);
 }
 
 function openCounts(conn: Conn): Map<string, number> {
@@ -93,7 +90,7 @@ function teamReps(conn: Conn, teamId: string) {
   return conn
     .select()
     .from(users)
-    .where(eq(users.teamId, teamId))
+    .where(and(eq(users.teamId, teamId), eq(users.role, 'REP')))
     .all()
     .map((u) => ({ ...u, openCount: counts.get(u.id) ?? 0 }));
 }
@@ -121,8 +118,12 @@ export function findStickyOwner(
     const isOpen = (OPEN_STAGES as readonly string[]).includes(l.stage);
     const recent = now - (l.lastActivityAt ?? l.createdAt) <= NINETY_DAYS_MS;
     if (!isOpen && !recent) continue;
-    const owner = conn.select().from(users).where(eq(users.id, l.ownerId)).get();
-    if (!owner || owner.role !== 'REP' || !owner.isActive || !owner.teamId) continue;
+    const owner = conn
+      .select()
+      .from(users)
+      .where(and(eq(users.id, l.ownerId), eq(users.role, 'REP')))
+      .get();
+    if (!owner || !owner.isActive || !owner.teamId) continue;
     if ((counts.get(owner.id) ?? 0) >= owner.maxOpenLeads) continue;
     return { userId: owner.id, teamId: owner.teamId };
   }
@@ -189,7 +190,7 @@ export function pickAssignee(
     unassignedReason,
   });
   if (!team.autoAssign) return none('auto_assign_off');
-  if (!reps.some((r) => r.role === 'REP' && r.isActive)) return none('no_active_reps');
+  if (!reps.some((r) => r.isActive)) return none('no_active_reps');
   const pool = eligibleReps(reps, teamId);
   if (pool.length === 0) return none('all_at_capacity');
 

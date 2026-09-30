@@ -18,7 +18,7 @@
     "db:migrate": "npm run db:migrate -w apps/web",
     "db:seed": "npm run db:seed -w apps/web",
     "db:reset": "npm run db:reset -w apps/web",
-    "simulate": "echo \"simulate is implemented by F10\" && exit 0",
+    "simulate": "npm run simulate -w apps/web --",
     "test": "vitest run",
     "test:e2e": "playwright test",
     "lint": "eslint . --ext .ts,.tsx --max-warnings 0",
