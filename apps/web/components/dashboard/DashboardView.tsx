@@ -119,7 +119,12 @@ export function DashboardView({ layout, teams, reps }: Props) {
 
       {tabs.length > 1 && (
         <div role="tablist" className="flex gap-2 border-b">
-          {tabs.map((t) => (
+          {tabs.map((t) =>
+            t.href ? (
+              <a key={t.id} href={t.href} role="tab" aria-selected={false} className="px-3 py-1 text-sm">
+                {t.label}
+              </a>
+            ) : (
             <button
               key={t.id}
               role="tab"
@@ -129,7 +134,8 @@ export function DashboardView({ layout, teams, reps }: Props) {
             >
               {t.label}
             </button>
-          ))}
+            ),
+          )}
         </div>
       )}
 

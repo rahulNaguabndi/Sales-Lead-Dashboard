@@ -1,8 +1,9 @@
 /** Append-only registry of dashboard tabs (F17 adds a Demographics tab here). */
-export type DashboardTab = { id: string; label: string; roles: readonly string[] };
+export type DashboardTab = { id: string; label: string; roles: readonly string[]; href?: string };
 
 export const DASHBOARD_TABS: DashboardTab[] = [
   { id: 'overview', label: 'Overview', roles: ['rep', 'manager', 'vp'] },
+  { id: 'demographics', label: 'Demographics', roles: ['manager', 'vp'], href: '/dashboard/demographics' },
 ];
 
 export const tabsFor = (layout: string): DashboardTab[] =>
