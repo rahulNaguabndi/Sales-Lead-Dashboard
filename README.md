@@ -6,7 +6,17 @@ A Sales Lead Management Tool for a fictional European car dealership group, "Eur
 |---|---|
 | **1. System Design Document** | [`docs/SYSTEM-DESIGN.md`](docs/SYSTEM-DESIGN.md): architecture diagram, components, data flow, tech choices, observability, GenAI in design |
 | **2. Working code** | This repository. Build, run and test instructions below. [AI Collaboration Narrative](#how-this-was-built) at the end. |
-| **3. Video** | Script and demo plan: [`docs/VIDEO-SCRIPT.md`](docs/VIDEO-SCRIPT.md) |
+| **3. Video** | App walkthrough: [`docs/media/sales-lead-dashboard-demo.mp4`](docs/media/sales-lead-dashboard-demo.mp4) ([watch below](#demo-video)). Script and demo plan: [`docs/VIDEO-SCRIPT.md`](docs/VIDEO-SCRIPT.md) |
+
+---
+
+## Demo Video
+
+A walkthrough of the whole app:
+
+<video src="https://github.com/rahulNaguabndi/Sales-Lead-Dashboard/raw/main/docs/media/sales-lead-dashboard-demo.mp4" controls width="100%"></video>
+
+If the player doesn't load, [open the video directly](docs/media/sales-lead-dashboard-demo.mp4).
 
 ---
 
