@@ -53,3 +53,21 @@ describe('validateEnquiry', () => {
     if (!r.ok) expect(r.errors.email).toBe('Please give us an email or phone number.');
   });
 });
+
+describe('validateEnquiry phone check', () => {
+  it('rejects a number the API would reject, next to the phone field', async () => {
+    const { defaultValues, validateEnquiry } = await import('./payload');
+    const v = {
+      ...defaultValues(),
+      firstName: 'Ana',
+      lastName: 'Test',
+      country: 'CH' as const,
+      dial: '+41',
+      phoneDigits: '123',
+      preferredChannel: 'CALL' as const,
+    };
+    const r = validateEnquiry(v);
+    expect(r.ok).toBe(false);
+    if (!r.ok) expect(r.errors.phoneDigits).toMatch(/valid Switzerland phone number/);
+  });
+});

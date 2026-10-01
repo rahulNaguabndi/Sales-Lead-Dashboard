@@ -6,6 +6,8 @@ import {
   type Channel,
   type CountryCode,
 } from '@leaddesk/shared';
+import { getExampleNumber, isValidPhoneNumber } from 'libphonenumber-js';
+import mobileExamples from 'libphonenumber-js/mobile/examples';
 import { BUDGET_OPTIONS } from '../../lib/budget';
 import { defaultValues, type EnquiryFormValues } from '../../lib/payload';
 
@@ -73,6 +75,22 @@ const FAKER_LOCALE: Partial<Record<CountryCode, string>> = {
   DK: 'da',
 };
 
+/**
+ * A national mobile number the intake API accepts: the country's example mobile number with its
+ * last digits randomised, re-checked with libphonenumber (random 9-digit strings were rejected by
+ * the server for most countries, so demo enquiries silently never reached the Lead Desk).
+ */
+export function validMobileDigits(country: CountryCode, rng: () => number): string {
+  const example = getExampleNumber(country, mobileExamples);
+  const base = example?.nationalNumber ?? '';
+  for (let i = 0; i < 25 && base; i++) {
+    const tail = String(Math.floor(rng() * 10_000)).padStart(4, '0');
+    const candidate = base.slice(0, -4) + tail;
+    if (isValidPhoneNumber(candidate, country)) return candidate;
+  }
+  return base;
+}
+
 export interface RandomBuyer {
   values: EnquiryFormValues;
   ageBand: BuyerAgeBand;
@@ -81,7 +99,7 @@ export interface RandomBuyer {
 /** Random, schema-valid buyer. Faker is loaded lazily so it stays out of the main bundle. */
 export async function randomBuyer(seed: number = Date.now()): Promise<RandomBuyer> {
   const rng = makeRng(seed);
-  const pick = <T,>(xs: readonly T[]): T => xs[Math.floor(rng() * xs.length)]!;
+  const pick = <T>(xs: readonly T[]): T => xs[Math.floor(rng() * xs.length)]!;
   const fakerMod = await import('@faker-js/faker');
   const country = pick(COUNTRY_CODES);
   const localized = (fakerMod as unknown as Record<string, typeof fakerMod.faker>)[
@@ -92,7 +110,7 @@ export async function randomBuyer(seed: number = Date.now()): Promise<RandomBuye
   const ageBand = pickAgeBand(rng());
   const firstName = faker.person.firstName().slice(0, 60);
   const lastName = faker.person.lastName().slice(0, 60);
-  const digits = String(Math.floor(100000000 + rng() * 899999999));
+  const digits = validMobileDigits(country, rng);
   const values: EnquiryFormValues = {
     ...defaultValues(),
     firstName,

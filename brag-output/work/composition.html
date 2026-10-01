@@ -1,0 +1,395 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8" />
+<style>
+  :root { --bg: #0b101a; --fg: #f1f4f9; --muted: #98a5bf; --blue: #3b8ff5; --blue2: #5aa9ff; }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { width: 1920px; height: 1080px; overflow: hidden; background: var(--bg); }
+  body { font-family: 'Segoe UI Variable Display', 'Segoe UI', system-ui, sans-serif; color: var(--fg); -webkit-font-smoothing: antialiased; }
+  .abs { position: absolute; }
+  #glow { inset: -60px; background:
+      radial-gradient(900px 600px at 20% 30%, rgba(28,105,216,.22), transparent 70%),
+      radial-gradient(800px 600px at 85% 80%, rgba(90,169,255,.10), transparent 70%); }
+  .scene { position: absolute; inset: 0; display: none; }
+  .win { position: absolute; border-radius: 16px; overflow: hidden; border: 1px solid #2c364c;
+         box-shadow: 0 40px 120px rgba(0,0,0,.55); background: #0b101a; transform-origin: 0 0; }
+  .bar { height: 36px; background: #151c2c; border-bottom: 1px solid #222b40; display: flex; align-items: center; padding: 0 16px; gap: 8px; }
+  .dot { width: 11px; height: 11px; border-radius: 50%; background: #2c364c; }
+  .url { margin-left: 18px; height: 22px; padding: 0 14px; border-radius: 11px; background: #0e1420; color: #7b8aa8; font-size: 13px; display: flex; align-items: center; }
+  .win img { display: block; }
+  .light .bar { background: #e9ebef; border-bottom-color: #d5d9e0; }
+  .light .dot { background: #c4c9d2; }
+  .light .url { background: #fff; color: #6b7280; }
+  .crop { position: absolute; overflow: hidden; }
+  .crop img { position: absolute; display: block; }
+  .h1 { font-size: 92px; font-weight: 700; letter-spacing: -0.025em; line-height: 1.05; }
+  .h2 { font-size: 40px; font-weight: 500; color: var(--muted); letter-spacing: -0.01em; }
+  .cap { font-size: 56px; font-weight: 650; letter-spacing: -0.02em; text-align: center; width: 1920px; left: 0; top: 66px; }
+  em { font-style: normal; color: var(--blue2); }
+  .w { display: inline-block; }
+  .scrim { left: 0; top: 0; width: 1920px; height: 230px; background: linear-gradient(#0b101a 0%, #0b101a 58%, rgba(11,16,26,0)); }
+  .ring { position: absolute; border: 3px solid var(--blue2); border-radius: 14px; box-shadow: 0 0 0 6px rgba(90,169,255,.18), 0 0 40px rgba(90,169,255,.45); }
+  .chip { position: absolute; padding: 12px 22px; border-radius: 999px; background: #1c69d8; color: #fff; font-size: 31px; font-weight: 650; white-space: nowrap; box-shadow: 0 12px 40px rgba(0,0,0,.45), 0 0 30px rgba(28,105,216,.4); }
+  .stat { position: absolute; padding: 18px 30px; border-radius: 18px; background: #121827; border: 1px solid #2c364c; font-size: 38px; font-weight: 600; white-space: nowrap; }
+  .stat b { color: var(--blue2); font-weight: 750; }
+  .badge { width: 120px; height: 120px; border-radius: 28px; background: linear-gradient(145deg, #3b8ff5, #1c56b4); display: flex; align-items: center; justify-content: center; font-size: 52px; font-weight: 800; color: #fff; box-shadow: 0 20px 80px rgba(59,143,245,.5); }
+  #cursor { width: 44px; height: 44px; left: 0; top: 0; z-index: 50; }
+  .pulse { position: absolute; border-radius: 50%; border: 4px solid var(--blue2); }
+  .bul { font-size: 42px; font-weight: 600; line-height: 1.25; display: flex; gap: 20px; align-items: baseline; }
+  .bul i { font-style: normal; color: var(--blue2); font-weight: 800; width: 40px; flex: none; }
+  .foot { font-size: 30px; color: #98a5bf; line-height: 1.4; }
+</style>
+</head>
+<body>
+<div id="glow" class="abs"></div>
+
+<!-- S1: showroom hook -->
+<div id="s1" class="scene">
+  <div class="abs" style="left:130px; top:300px; width:840px;">
+    <div id="s1l1" class="h1"></div>
+    <div id="s1l2" class="h2" style="margin-top:34px;"></div>
+  </div>
+  <div id="s1models" class="win light" style="left:1010px; top:300px; width:840px;">
+    <div class="bar"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="url">eurodrive-motors · showroom</span></div>
+    <img src="shots/showroom-models.png" style="width:840px;" />
+  </div>
+  <div id="s1win" class="win light" style="left:1250px; top:16px; width:540px;">
+    <div class="bar"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="url">eurodrive-motors · showroom</span></div>
+    <div class="crop" style="position:relative; width:540px; height:1012px;">
+      <img src="shots/showroom-form-filled.png" style="width:1800px; left:-1260px; top:0;" />
+    </div>
+  </div>
+  <div id="s1ring" class="ring" style="border-radius:10px;"></div>
+  <div id="s1pulse" class="pulse"></div>
+</div>
+
+<!-- S2: live inbox -->
+<div id="s2" class="scene">
+  <div id="s2win" class="win" style="left:211px; top:190px; width:1498px;">
+    <div class="bar"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="url">lead desk · inbox</span></div>
+    <div style="position:relative; width:1498px; height:843px;">
+      <img src="shots/inbox-table-before.png" style="position:absolute; width:1498px; left:0; top:0;" />
+      <img id="s2after" src="shots/inbox-table-after.png" style="position:absolute; width:1498px; left:0; top:0;" />
+      <div id="s2toastmask" class="abs" style="background:#0b101a;"></div>
+      <div id="s2toast" class="crop" style="border-radius:10px;"><img src="shots/inbox-table-after.png" /></div>
+    </div>
+  </div>
+  <div class="abs scrim"></div>
+  <div id="s2cap" class="abs cap"></div>
+</div>
+
+<!-- S3: reveal -->
+<div id="s3" class="scene">
+  <div id="s3badge" class="abs badge" style="left:900px; top:250px;">ED</div>
+  <div id="s3word" class="abs" style="left:0; width:1920px; top:420px; text-align:center; font-size:120px; font-weight:750; letter-spacing:-0.035em;">EuroDrive <span style="color:var(--blue2)">Lead Desk</span></div>
+  <div id="s3tag" class="abs h2" style="left:0; width:1920px; top:600px; text-align:center; font-size:52px; color:#c9d2e3;"></div>
+</div>
+
+<!-- S6: AI assist -->
+<div id="sAI" class="scene">
+  <div class="abs" style="left:130px; top:150px; width:1060px;">
+    <div id="aiT" class="h1" style="font-size:80px;"></div>
+    <div style="margin-top:60px; display:flex; flex-direction:column; gap:34px;">
+      <div id="aiB1" class="bul"><i>1</i><span>Summarises every touch so far</span></div>
+      <div id="aiB2" class="bul"><i>2</i><span>Picks the channel and the timing:<br><em>WhatsApp went unanswered → SMS</em></span></div>
+      <div id="aiB3" class="bul"><i>3</i><span>Drafts the message in the<br>customer’s language, with a live offer</span></div>
+    </div>
+    <div id="aiF" class="foot" style="margin-top:60px;">Claude when it’s available, rules when it’s not.<br>Email and phone numbers never reach the model.</div>
+  </div>
+  <div id="aiCard" class="crop" style="left:1300px; top:26px; width:468px; height:1027px; border-radius:18px; border:1px solid #2c364c; box-shadow:0 40px 120px rgba(0,0,0,.6);">
+    <img src="shots/ai-full-boris.png" style="width:468px; left:0; top:0;" />
+  </div>
+  <div id="aiR1" class="ring"></div><div id="aiR2" class="ring"></div><div id="aiR3" class="ring"></div>
+</div>
+
+<!-- S10: punchline -->
+<div id="sP" class="scene">
+  <div id="pH" class="abs h1" style="left:0; width:1920px; top:300px; text-align:center; font-size:132px;"></div>
+  <div id="st1" class="stat"><b>20</b> feature specs</div>
+  <div id="st2" class="stat"><b>6</b> Claude agents in parallel</div>
+  <div id="st3" class="stat"><b>837</b> tests</div>
+  <div id="pFoot" class="abs" style="left:0; width:1920px; top:880px; display:flex; justify-content:center; align-items:center; gap:22px; font-size:32px; color:#98a5bf;">
+    <div class="badge" style="width:58px; height:58px; border-radius:14px; font-size:24px; box-shadow:none;">ED</div>
+    <span style="color:#f1f4f9; font-weight:650;">EuroDrive Lead Desk</span>
+    <span>· Showroom · Inbox · Assign · Follow-ups · AI assist · Dashboards</span>
+  </div>
+</div>
+
+<div id="generic"></div>
+<svg id="cursor" class="abs" viewBox="0 0 24 24"><path d="M4 2 L4 19 L8.6 14.8 L11.6 21.4 L14.4 20.2 L11.4 13.7 L17.6 13.4 Z" fill="#fff" stroke="#0b101a" stroke-width="1.4" stroke-linejoin="round"/></svg>
+
+<script>
+const $ = (id) => document.getElementById(id);
+const clamp = (x, a = 0, b = 1) => Math.min(b, Math.max(a, x));
+const r = (t, a, b) => clamp((t - a) / (b - a));
+const lerp = (a, b, p) => a + (b - a) * p;
+const out3 = (p) => 1 - Math.pow(1 - p, 3);
+const out5 = (p) => 1 - Math.pow(1 - p, 5);
+const inOut = (p) => (p < 0.5 ? 4 * p * p * p : 1 - Math.pow(-2 * p + 2, 3) / 2);
+const back = (p) => { const c1 = 1.5, c3 = c1 + 1; return 1 + c3 * Math.pow(p - 1, 3) + c1 * Math.pow(p - 1, 2); };
+const set = (el, op, tf) => { el.style.opacity = op; if (tf !== undefined) el.style.transform = tf; };
+const place = (el, x, y, w, h) => Object.assign(el.style, { left: x + 'px', top: y + 'px', width: w + 'px', height: h + 'px' });
+
+function words(el, html) {
+  el.innerHTML = html.split(' ').map((w) => `<span class="w">${w}</span>`).join(' ');
+  return [...el.querySelectorAll('.w')];
+}
+function wordsIn(ws, t, start, step = 0.06, dur = 0.45, dy = 30) {
+  ws.forEach((w, i) => { const p = out3(r(t, start + i * step, start + i * step + dur)); set(w, p, `translateY(${(1 - p) * dy}px)`); });
+}
+function scene(el, t, a, b, inDur = 0.35, outDur = 0.28) {
+  if (t < a - 0.001 || t > b + 0.001) { el.style.display = 'none'; return 0; }
+  el.style.display = 'block';
+  const pi = a === 0 ? 1 : out3(r(t, a, a + inDur)), po = r(t, b - outDur, b);
+  set(el, pi * (1 - po), `scale(${1 - 0.02 * po})`);
+  return 1;
+}
+
+// Screenshot windows: 1920x1080 captures shown at K.
+const K = 1498 / 1920, WX = 211, WY = 190 + 36;
+const scr = (x, y) => [WX + x * K, WY + y * K];
+
+// ---------------- Generic "screen + callouts" scenes
+const SCENES = [
+  { a: 11.0, b: 15.0, cap: 'Every call, message and meeting. <em>One timeline.</em>',
+    shots: [{ src: 'history-lead', url: 'lead desk · Boris Scheer', at: 11.0 }],
+    callouts: [
+      { at: 11.9, rect: [496, 426, 1022, 640], chip: 'Full history, newest first', side: 'left', dy: 120 },
+      { at: 13.2, rect: [96, 176, 1798, 40], chip: 'Duplicate leads flagged before two reps call', side: 'below', dx: 520 },
+    ] },
+  { a: 15.0, b: 20.0, cap: 'Reach every customer <em>their way, at their hours.</em>',
+    shots: [{ src: 'new-lead-detail', url: 'lead desk · Marta Vogel', at: 15.0 }],
+    callouts: [
+      { at: 15.8, rect: [110, 492, 356, 102], chip: '★ Preferred channel + best time', side: 'right' },
+      { at: 16.9, rect: [116, 990, 350, 52], chip: 'Warns before you call at the wrong hour', side: 'right' },
+    ],
+    crops: [{ at: 18.0, src: 'prefs-dialog-marta', crop: [650, 274, 622, 532], s: 1.25, cx: 1180, cy: 650, chip: 'Every change is audited onto the timeline' }] },
+  { a: 27.0, b: 32.0, cap: 'Managers balance the team: <em>assign one lead, or ten.</em>',
+    shots: [{ src: 'bulk-assign-open', url: 'lead desk · team inbox', at: 27.0 }, { src: 'assign-open', url: 'lead desk · Marta Vogel', at: 29.7 }],
+    callouts: [
+      { at: 27.6, shot: 0, rect: [86, 390, 1816, 140], chip: 'Bulk-select', side: 'below', dx: 1200 },
+      { at: 28.5, shot: 0, rect: [198, 650, 386, 374], chip: 'Each rep’s load, languages and capacity', side: 'right' },
+      { at: 30.4, shot: 1, rect: [1538, 118, 378, 370], chip: 'Or claim straight from the unassigned pool', side: 'left' },
+    ] },
+  { a: 32.0, b: 36.5, cap: 'Follow-ups that <em>never slip.</em>',
+    shots: [{ src: 'rep-inbox', url: 'lead desk · Sofia’s inbox', at: 32.0 }, { src: 'schedule-popover2', url: 'lead desk · Boris Scheer', at: 34.0 }],
+    callouts: [
+      { at: 32.6, shot: 0, rect: [84, 124, 1818, 92], chip: 'Today’s follow-ups, top of every rep’s inbox', side: 'below', dx: 400 },
+      { at: 34.7, shot: 1, rect: [1530, 234, 368, 252], chip: 'At-risk and overdue, flagged automatically', side: 'left' },
+      { at: 35.5, shot: 1, rect: [1550, 554, 250, 140], chip: 'Done, snooze or reschedule in one tap', side: 'left' },
+    ] },
+  { a: 36.5, b: 39.0, cap: 'VPs see the <em>whole funnel.</em>',
+    shots: [{ src: 'vp-dashboard', url: 'lead desk · dashboard', at: 36.5 }], callouts: [] },
+];
+
+const gen = $('generic');
+SCENES.forEach((S, si) => {
+  const el = document.createElement('div'); el.className = 'scene'; gen.appendChild(el); S.el = el;
+  S.shots.forEach((sh, i) => {
+    const w = document.createElement('div'); w.className = 'win'; place(w, 211, 190, 1498, 879);
+    w.innerHTML = `<div class="bar"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="url">${sh.url}</span></div><img src="shots/${sh.src}.png" style="width:1498px;">`;
+    el.appendChild(w); sh.el = w;
+  });
+  (S.crops || []).forEach((c) => {
+    const d = document.createElement('div'); d.className = 'crop';
+    d.style.cssText += 'border-radius:16px; box-shadow:0 40px 120px rgba(0,0,0,.7), 0 0 0 2px rgba(90,169,255,.6);';
+    const W = c.crop[2] * c.s, H = c.crop[3] * c.s; place(d, c.cx - W / 2, c.cy - H / 2, W, H);
+    d.innerHTML = `<img src="shots/${c.src}.png" style="width:${1920 * c.s}px; left:${-c.crop[0] * c.s}px; top:${-c.crop[1] * c.s}px;">`;
+    el.appendChild(d); c.el = d;
+    const ch = document.createElement('div'); ch.className = 'chip'; ch.textContent = c.chip;
+    Object.assign(ch.style, { left: c.cx - W / 2 + 'px', top: c.cy - H / 2 - 74 + 'px' }); el.appendChild(ch); c.chipEl = ch;
+  });
+  const scrim = document.createElement('div'); scrim.className = 'abs scrim'; el.appendChild(scrim);
+  const cap = document.createElement('div'); cap.className = 'abs cap'; el.appendChild(cap); S.capW = words(cap, S.cap);
+  S.callouts.forEach((c) => {
+    const [x, y] = scr(c.rect[0], c.rect[1]), w = c.rect[2] * K, h = c.rect[3] * K;
+    const ring = document.createElement('div'); ring.className = 'ring'; place(ring, x - 6, y - 6, w + 12, h + 12); el.appendChild(ring); c.ring = ring;
+    const ch = document.createElement('div'); ch.className = 'chip'; ch.textContent = c.chip; el.appendChild(ch); c.chipEl = ch;
+    const st = ch.style, dx = c.dx || 0, dy = c.dy || 0;
+    if (c.side === 'left') { st.right = 1920 - (x - 28) + 'px'; st.top = y + h / 2 - 32 + dy + 'px'; }
+    if (c.side === 'right') { st.left = x + w + 28 + 'px'; st.top = y + h / 2 - 32 + dy + 'px'; }
+    if (c.side === 'below') { st.left = x + dx + 'px'; st.top = y + h + 20 + dy + 'px'; }
+  });
+});
+
+function renderGeneric(S, t) {
+  if (!scene(S.el, t, S.a, S.b)) return;
+  wordsIn(S.capW, t, S.a + 0.15, 0.055, 0.45, 30);
+  S.shots.forEach((sh, i) => {
+    const next = S.shots[i + 1];
+    const pin = i === 0 ? out5(r(t, S.a, S.a + 0.5)) : inOut(r(t, sh.at - 0.25, sh.at + 0.3));
+    const pout = next ? inOut(r(t, next.at - 0.25, next.at + 0.3)) : 0;
+    if (i === 0) set(sh.el, pin, `translate(${-pout * 1800}px, ${(1 - pin) * 50}px)`);
+    else set(sh.el, pin > 0 ? 1 : 0, `translateX(${(1 - pin) * 1800 - pout * 1800}px)`);
+    sh.vis = (i === 0 ? 1 : (pin >= 1 ? 1 : 0)) * (1 - r(t, (next ? next.at : 99) - 0.45, (next ? next.at : 99) - 0.25));
+  });
+  S.callouts.forEach((c, k) => {
+    const sv = S.shots[c.shot || 0].vis;
+    const nxt = S.callouts[k + 1];
+    const dim = nxt && (nxt.shot || 0) === (c.shot || 0) ? 1 - 0.5 * r(t, nxt.at, nxt.at + 0.3) : 1;
+    if (!c.fit && c.side !== 'left' && c.chipEl.offsetWidth) { c.fit = 1; const L = parseFloat(c.chipEl.style.left); if (L + c.chipEl.offsetWidth > 1890) { c.chipEl.style.left = ''; c.chipEl.style.right = '30px'; } }
+    const p = back(r(t, c.at, c.at + 0.4));
+    set(c.ring, r(t, c.at, c.at + 0.15) * dim * sv, `scale(${1.04 - 0.04 * out3(r(t, c.at, c.at + 0.35))})`);
+    set(c.chipEl, r(t, c.at, c.at + 0.15) * dim * sv, `translateY(${(1 - p) * 24}px) scale(${0.88 + 0.12 * p})`);
+  });
+  (S.crops || []).forEach((c) => {
+    const p = back(r(t, c.at, c.at + 0.45));
+    set(c.el, r(t, c.at, c.at + 0.15), `translateY(${(1 - p) * 60}px) scale(${0.9 + 0.1 * p})`);
+    set(c.chipEl, r(t, c.at + 0.15, c.at + 0.3), `translateY(${(1 - out3(r(t, c.at + 0.15, c.at + 0.5))) * 20}px)`);
+    S.callouts.forEach((cc) => { cc.ring.style.opacity *= 1 - r(t, c.at, c.at + 0.25); cc.chipEl.style.opacity *= 1 - r(t, c.at, c.at + 0.25); });
+  });
+}
+
+// ---------------- Custom scenes
+const W = {
+  s1l1: words($('s1l1'), 'Marta wants a <em>Luma&nbsp;EV.</em>'),
+  s1l2: words($('s1l2'), 'She sends one enquiry from the dealer’s site.'),
+  s2cap: words($('s2cap'), 'Seconds later: the sales inbox. <em>Live.</em>'),
+  s3tag: words($('s3tag'), 'Which lead to work next, <em>and how.</em>'),
+  aiT: words($('aiT'), 'AI drafts the <em>next move.</em>'),
+  pH: words($('pH'), 'Built in <em>one day.</em>'),
+};
+
+// S1 geometry
+const MK = 840 / 1920, MX = 1010, MY = 300 + 36;
+const luma = { x: MX + 778 * MK, y: MY + 976 * MK, w: 159 * MK, h: 49 * MK };
+const S1K = 540 / 576, S1X = 1250, S1Y = 16 + 36;
+const sendBtn = { x: (1368 - 1344) * S1K + S1X, y: 1017 * S1K + S1Y, w: 528 * S1K, h: 49 * S1K };
+const cen = (b) => [b.x + b.w / 2, b.y + b.h / 2];
+
+// S2 toast
+const T = { x: 1455, y: 972, w: 427, h: 70 };
+(() => {
+  const el = $('s2toast'); place(el, T.x * K, T.y * K, T.w * K, T.h * K);
+  Object.assign(el.querySelector('img').style, { width: '1498px', left: -T.x * K + 'px', top: -T.y * K + 'px' });
+  place($('s2toastmask'), T.x * K - 2, T.y * K - 2, T.w * K + 4, T.h * K + 4);
+})();
+
+// AI card rings (card image 360 wide shown at 1.3)
+const AK = 1.3, AX = 1300, AY = 26;
+[[$('aiR1'), 26, 112, 310, 140], [$('aiR2'), 26, 260, 310, 128], [$('aiR3'), 26, 506, 310, 204]].forEach(([el, x, y, w, h]) => place(el, AX + x * AK - 6, AY + y * AK - 6, w * AK + 12, h * AK + 12));
+
+// Punchline stats (laid out once the scene is visible)
+let statsDone = false;
+const layoutStats = () => {
+  const ids = ['st1', 'st2', 'st3'], gap = 28, ws = ids.map((id) => $(id).offsetWidth);
+  let x = (1920 - ws.reduce((a, b) => a + b, 0) - gap * 2) / 2;
+  ids.forEach((id, i) => { Object.assign($(id).style, { left: x + 'px', top: '560px' }); x += ws[i] + gap; });
+  statsDone = true;
+};
+
+function clickFx(t, at, b) {
+  const ring = $('s1ring'); place(ring, b.x - 6, b.y - 6, b.w + 12, b.h + 12);
+  const c = cen(b), pp = r(t, at, at + 0.6), pr = lerp(20, 240, out3(pp));
+  place($('s1pulse'), c[0] - pr / 2, c[1] - pr / 2, pr, pr);
+  return { ring: r(t, at - 0.05, at + 0.05) * (1 - r(t, at + 0.4, at + 0.6)), pulse: pp > 0 && pp < 1 ? 0.9 * (1 - pp) : 0 };
+}
+
+window.DURATION = 43.0;
+window.AUDIO_EVENTS = {
+  clicks: [1.55, 3.85],
+  toast: 5.5,
+  reveal: 8.0,
+  cuts: [4.5, 11.0, 15.0, 20.0, 27.0, 32.0, 36.5],
+  pushes: [1.85, 29.7, 34.0],
+  ticks: [11.9, 13.2, 15.8, 16.9, 18.0, 21.2, 22.5, 23.8, 25.0, 27.6, 28.5, 30.4, 32.6, 34.7, 35.5],
+  punch: 39.0,
+  stats: [39.9, 40.2, 40.5],
+  outro: 41.1,
+};
+
+window.renderAt = function (t) {
+  const cur = $('cursor'); set(cur, 0);
+
+  // S1 showroom 0–4.5
+  if (scene($('s1'), t, 0, 4.5)) {
+    wordsIn(W.s1l1, t, 0.1, 0.07, 0.5, 40);
+    wordsIn(W.s1l2, t, 2.0, 0.05, 0.45, 26);
+    const pm0 = out5(r(t, 0, 0.6)), sw = inOut(r(t, 1.75, 2.25));
+    set($('s1models'), pm0 * (1 - sw), `translate(${(1 - pm0) * 160}px, ${-sw * 120}px) scale(${1 - 0.06 * sw})`);
+    const pf = out5(r(t, 1.85, 2.4));
+    set($('s1win'), pf, `translateY(${(1 - pf) * 1100}px)`);
+    // cursor: to Luma "I'm interested", then to Send enquiry
+    const L = cen(luma), S = cen(sendBtn);
+    let cx, cy;
+    if (t < 1.9) { const p = inOut(r(t, 0.55, 1.45)); cx = lerp(1000, L[0] + 20, p); cy = lerp(1120, L[1] - 4, p) - Math.sin(p * Math.PI) * 90; }
+    else { const p = inOut(r(t, 2.6, 3.7)); cx = lerp(L[0] + 20, S[0] + 40, p); cy = lerp(L[1] - 4, S[1] - 6, p) - Math.sin(p * Math.PI) * 140; }
+    const press = (t > 1.55 && t < 1.7) || (t > 3.85 && t < 4.0) ? 0.86 : 1;
+    set(cur, r(t, 0.55, 0.75) * (1 - r(t, 4.2, 4.4)), `translate(${cx}px, ${cy}px) scale(${press})`);
+    const fx = t < 2.5 ? clickFx(t, 1.55, luma) : clickFx(t, 3.85, sendBtn);
+    set($('s1ring'), fx.ring); set($('s1pulse'), fx.pulse);
+  }
+
+  // S2 live inbox 4.5–8.0 (toast at 5.5)
+  if (scene($('s2'), t, 4.5, 8.0)) {
+    wordsIn(W.s2cap, t, 4.7, 0.06, 0.45, 30);
+    const pa = out5(r(t, 4.5, 5.0));
+    $('s2after').style.opacity = r(t, 5.5, 5.65);
+    $('s2toastmask').style.opacity = 1 - r(t, 5.5, 5.55);
+    const pt = back(r(t, 5.5, 5.95)), toast = $('s2toast');
+    toast.style.opacity = r(t, 5.5, 5.62);
+    toast.style.transform = `translateY(${(1 - pt) * 60}px)`;
+    const glow = Math.max(0, 1 - Math.abs(t - 6.0) / 0.6);
+    toast.style.boxShadow = `0 10px 40px rgba(0,0,0,.6), 0 0 0 ${2 + 3 * glow}px rgba(90,169,255,${0.25 + 0.6 * glow})`;
+    const pz = inOut(r(t, 6.05, 6.9)), s = lerp(1, 1.7, pz);
+    const Pc = [(T.x + T.w / 2) * K, 36 + (T.y + T.h / 2) * K], nat = [211 + Pc[0], 190 + Pc[1]];
+    const tgt = [lerp(nat[0], 1250, pz), lerp(nat[1], 880, pz)];
+    set($('s2win'), pa, `translate(${tgt[0] - 211 - s * Pc[0]}px, ${tgt[1] - 190 - s * Pc[1] + (1 - pa) * 40}px) scale(${s})`);
+  }
+
+  // S3 reveal 8.0–11.0
+  if (scene($('s3'), t, 8.0, 11.0, 0.2)) {
+    const pb = back(r(t, 8.0, 8.45));
+    set($('s3badge'), r(t, 8.0, 8.15), `scale(${0.4 + 0.6 * pb}) rotate(${(1 - pb) * -12}deg)`);
+    const pw = out5(r(t, 8.2, 8.8));
+    set($('s3word'), pw, `translateY(${(1 - pw) * 50}px)`);
+    wordsIn(W.s3tag, t, 8.75, 0.06, 0.45, 24);
+  }
+
+  // Generic scenes
+  SCENES.forEach((S) => renderGeneric(S, t));
+
+  // S6 AI 20.0–27.0
+  if (scene($('sAI'), t, 20.0, 27.0)) {
+    wordsIn(W.aiT, t, 20.15, 0.07, 0.5, 36);
+    const pc = out5(r(t, 20.1, 20.7));
+    set($('aiCard'), pc, `translateX(${(1 - pc) * 200}px)`);
+    [['aiB1', 'aiR1', 21.2], ['aiB2', 'aiR2', 22.5], ['aiB3', 'aiR3', 23.8]].forEach(([b, rr, at], i, arr) => {
+      const p = out3(r(t, at, at + 0.45));
+      const nx = arr[i + 1] ? arr[i + 1][2] : 25.0;
+      const dimB = 1 - 0.45 * r(t, nx, nx + 0.3);
+      set($(b), p * dimB, `translateX(${(1 - p) * -40}px)`);
+      set($(rr), r(t, at, at + 0.15) * (1 - r(t, nx, nx + 0.3)), `scale(${1.04 - 0.04 * out3(r(t, at, at + 0.35))})`);
+    });
+    const pf = out3(r(t, 25.0, 25.4));
+    set($('aiF'), pf, `translateY(${(1 - pf) * 20}px)`);
+  }
+
+  // S10 punchline 39.0–43.0
+  if (scene($('sP'), t, 39.0, 43.0, 0.15, 0.35)) {
+    if (!statsDone) layoutStats();
+    W.pH.forEach((w, i) => {
+      const a = 39.0 + i * 0.08, p = back(r(t, a, a + 0.45));
+      set(w, r(t, a, a + 0.12), `translateY(${(1 - p) * 60}px) scale(${0.9 + 0.1 * p})`);
+    });
+    ['st1', 'st2', 'st3'].forEach((id, i) => {
+      const a = 39.9 + i * 0.3, p = back(r(t, a, a + 0.4));
+      set($(id), r(t, a, a + 0.12), `translateY(${(1 - p) * 40}px)`);
+    });
+    const pf = out3(r(t, 41.1, 41.5));
+    set($('pFoot'), pf, `translateY(${(1 - pf) * 20}px)`);
+  }
+  $('glow').style.transform = `translate(${Math.sin(t * 0.35) * 40}px, ${Math.cos(t * 0.3) * 30}px)`;
+};
+
+window.ready = (async () => {
+  await document.fonts.ready;
+  await Promise.all([...document.images].map((i) => (i.complete ? 0 : new Promise((res) => (i.onload = i.onerror = res)))));
+  await new Promise((res) => requestAnimationFrame(() => requestAnimationFrame(res)));
+  window.renderAt(0);
+  return true;
+})();
+</script>
+</body>
+</html>

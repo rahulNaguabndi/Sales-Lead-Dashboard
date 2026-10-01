@@ -67,6 +67,18 @@ export async function getLeadDetail(
     .where(and(eq(leads.customerId, lead.customerId), ne(leads.id, lead.id)))
     .orderBy(desc(leads.createdAt), desc(leads.id))
     .all();
+  // Owner names (one query) so a lead the viewer can't open still says whose it is.
+  const ownerIds = [...new Set(prev.map((p) => p.ownerId).filter((id): id is string => !!id))];
+  const ownerNames = new Map(
+    ownerIds.length
+      ? database
+          .select({ id: users.id, name: users.name })
+          .from(users)
+          .where(inArray(users.id, ownerIds))
+          .all()
+          .map((u) => [u.id, u.name] as const)
+      : [],
+  );
   const previousLeads = [];
   for (const p of prev) {
     previousLeads.push({
@@ -75,6 +87,7 @@ export async function getLeadDetail(
       vehicleModel: p.vehicleModel,
       stage: p.stage,
       createdAt: p.createdAt,
+      ownerName: p.ownerId ? (ownerNames.get(p.ownerId) ?? null) : null,
       canView: await can(user, 'lead:read', { kind: 'lead', lead: p }, authDeps),
     });
   }

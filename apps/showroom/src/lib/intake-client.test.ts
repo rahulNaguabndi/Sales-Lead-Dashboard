@@ -48,16 +48,39 @@ describe('submitEnquiry', () => {
 
   it('202 → accepted', async () => {
     fetchMock.mockResolvedValueOnce(json(202, { status: 'accepted' }));
-    expect(await submitEnquiry(payload, 'k', env)).toEqual({ ok: true, data: { status: 'accepted' } });
+    expect(await submitEnquiry(payload, 'k', env)).toEqual({
+      ok: true,
+      data: { status: 'accepted' },
+    });
   });
 
   it('400 → validation fields', async () => {
     fetchMock.mockResolvedValueOnce(
-      json(400, { error: { code: 'VALIDATION_ERROR', fields: [{ path: 'email', message: 'bad' }] } }),
+      json(400, {
+        error: { code: 'VALIDATION_ERROR', fields: [{ path: 'email', message: 'bad' }] },
+      }),
     );
     expect(await submitEnquiry(payload, 'k', env)).toEqual({
       ok: false,
       error: { kind: 'validation', fields: [{ path: 'email', message: 'bad' }] },
+    });
+  });
+
+  it('400 with the API’s map-shaped fields keeps the field error (real server format)', async () => {
+    fetchMock.mockResolvedValueOnce(
+      json(400, {
+        error: {
+          code: 'VALIDATION_ERROR',
+          fields: { phone: 'Invalid phone number for the selected country' },
+        },
+      }),
+    );
+    expect(await submitEnquiry(payload, 'k', env)).toEqual({
+      ok: false,
+      error: {
+        kind: 'validation',
+        fields: [{ path: 'phone', message: 'Invalid phone number for the selected country' }],
+      },
     });
   });
 
@@ -69,7 +92,10 @@ describe('submitEnquiry', () => {
     });
     expect(warn).toHaveBeenCalled();
     fetchMock.mockResolvedValueOnce(json(413, {}));
-    expect(await submitEnquiry(payload, 'k', env)).toEqual({ ok: false, error: { kind: 'too_large' } });
+    expect(await submitEnquiry(payload, 'k', env)).toEqual({
+      ok: false,
+      error: { kind: 'too_large' },
+    });
     fetchMock.mockResolvedValueOnce(json(429, {}, { 'Retry-After': '30' }));
     expect(await submitEnquiry(payload, 'k', env)).toEqual({
       ok: false,
@@ -93,7 +119,10 @@ describe('submitEnquiry', () => {
 
   it('rejection → network', async () => {
     fetchMock.mockRejectedValueOnce(new TypeError('failed'));
-    expect(await submitEnquiry(payload, 'k', env)).toEqual({ ok: false, error: { kind: 'network' } });
+    expect(await submitEnquiry(payload, 'k', env)).toEqual({
+      ok: false,
+      error: { kind: 'network' },
+    });
   });
 
   it('aborts after 10 s → timeout', async () => {

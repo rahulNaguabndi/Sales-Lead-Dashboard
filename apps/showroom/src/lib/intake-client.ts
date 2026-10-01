@@ -11,8 +11,7 @@ export type IntakeError =
   | { kind: 'server'; status: number };
 
 export type IntakeResult =
-  | { ok: true; data: IntakeResponse | { status: 'accepted' } }
-  | { ok: false; error: IntakeError };
+  { ok: true; data: IntakeResponse | { status: 'accepted' } } | { ok: false; error: IntakeError };
 
 export const INTAKE_TIMEOUT_MS = 10_000;
 export const MOCK_DELAY_MS = 600;
@@ -31,7 +30,10 @@ export async function submitEnquiry(
         reference: `EDM-2026-${n}`,
         status: 'created',
         assignedTo: null,
-        expectedContact: { channel: payload.preferredChannel, bestTime: payload.bestTime ?? 'ANYTIME' },
+        expectedContact: {
+          channel: payload.preferredChannel,
+          bestTime: payload.bestTime ?? 'ANYTIME',
+        },
       },
     };
   }
@@ -72,11 +74,20 @@ export async function submitEnquiry(
       return { ok: true, data: { status: 'accepted' } };
     case 400: {
       const fields = (body as { error?: { fields?: unknown } } | undefined)?.error?.fields;
+      // The API sends `fields` as a map ({ phone: "…" }); older builds sent [{ path, message }].
+      // Accept both so a server-side rejection is shown next to the field, never swallowed.
       const list = Array.isArray(fields)
         ? fields
-            .filter((f): f is { path: string; message: string } => !!f && typeof f.path === 'string')
+            .filter(
+              (f): f is { path: string; message: string } => !!f && typeof f.path === 'string',
+            )
             .map((f) => ({ path: f.path, message: String(f.message ?? 'Invalid value') }))
-        : [];
+        : fields && typeof fields === 'object'
+          ? Object.entries(fields as Record<string, unknown>).map(([path, message]) => ({
+              path,
+              message: String(message ?? 'Invalid value'),
+            }))
+          : [];
       return { ok: false, error: { kind: 'validation', fields: list } };
     }
     case 401:
@@ -88,7 +99,10 @@ export async function submitEnquiry(
       const ra = Number(res.headers.get('Retry-After'));
       return {
         ok: false,
-        error: { kind: 'rate_limited', retryAfterSec: Number.isFinite(ra) && ra > 0 ? ra : undefined },
+        error: {
+          kind: 'rate_limited',
+          retryAfterSec: Number.isFinite(ra) && ra > 0 ? ra : undefined,
+        },
       };
     }
     default:

@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import { Lock } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { stageLabel, vehicleName } from '@leaddesk/shared';
 import { formatDate, formatEUR } from '@/lib/format';
@@ -23,7 +24,18 @@ export function HistoryCard({ history }: { history: LeadDetail['history'] }) {
                     {p.reference}
                   </Link>
                 ) : (
-                  <span>{p.reference}</span>
+                  // Not a broken link: reps can only open their own and their team's pool leads.
+                  <span
+                    className="inline-flex items-center gap-1 text-muted-foreground"
+                    title={`${p.ownerName ? `Owned by ${p.ownerName}` : 'Unassigned in another team'}. Only the owner or a manager can open it.`}
+                  >
+                    <Lock aria-hidden className="h-3 w-3" />
+                    {p.reference}
+                    <span className="text-xs">
+                      {p.ownerName ? `· ${p.ownerName}` : '· other team'}
+                    </span>
+                    <span className="sr-only">(you can’t open this lead)</span>
+                  </span>
                 )}
                 <span className="text-muted-foreground">
                   {vehicleName(p.vehicleModel)} · {stageLabel(p.stage)} · {formatDate(p.createdAt)}

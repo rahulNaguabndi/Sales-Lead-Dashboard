@@ -9,6 +9,7 @@ import {
   type LeadSource,
 } from '@leaddesk/shared';
 import { budgetRange, type BudgetBand } from './budget';
+import { isValidPhoneNumber } from 'libphonenumber-js';
 import { combinePhone } from './phone';
 
 export interface EnquiryFormValues {
@@ -99,14 +100,19 @@ export function fieldForPath(path: string, channel?: Channel): string {
 }
 
 export type Validation =
-  | { ok: true; payload: IntakeLead }
-  | { ok: false; errors: Record<string, string> };
+  { ok: true; payload: IntakeLead } | { ok: false; errors: Record<string, string> };
 
 export function validateEnquiry(v: EnquiryFormValues, src?: SourceSelection): Validation {
   const raw = buildPayload(v, src);
   const r = IntakeLeadSchema.safeParse(raw);
-  if (r.success) return { ok: true, payload: raw };
   const errors: Record<string, string> = {};
+  // Same check as the server (libphonenumber-js per country), so a number the API will reject is
+  // caught here with a clear message instead of failing after submit.
+  if (raw.phone && !isValidPhoneNumber(raw.phone, v.country)) {
+    errors.phoneDigits = `Please enter a valid ${COUNTRIES[v.country].name} phone number.`;
+  }
+  if (r.success)
+    return Object.keys(errors).length ? { ok: false, errors } : { ok: true, payload: raw };
   const hasContact = !!(raw.email || raw.phone);
   for (const issue of r.error.issues) {
     const p = String(issue.path[0] ?? 'form');

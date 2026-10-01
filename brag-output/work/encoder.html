@@ -1,0 +1,112 @@
+<!doctype html>
+<html><head><meta charset="utf-8" /><script src="audio.js"></script></head>
+<body>
+<script>
+// WebCodecs H.264 + AAC, muxed into a faststart MP4 by hand.
+const FPS = 30, W = 1920, H = 1080;
+let vChunks = [], vDesc = null, aChunks = [], aDesc = null, venc, frameIdx = 0;
+
+window.startVideo = async () => {
+  venc = new VideoEncoder({
+    output: (c, m) => { const b = new Uint8Array(c.byteLength); c.copyTo(b); vChunks.push({ b, key: c.type === 'key' }); if (m && m.decoderConfig && m.decoderConfig.description) vDesc = new Uint8Array(m.decoderConfig.description); },
+    error: (e) => { throw e; },
+  });
+  venc.configure({ codec: 'avc1.640028', width: W, height: H, bitrate: 14_000_000, framerate: FPS, avc: { format: 'avc' }, latencyMode: 'quality' });
+  return true;
+};
+window.pushFrame = async (b64) => {
+  const bin = Uint8Array.from(atob(b64), (c) => c.charCodeAt(0));
+  const bmp = await createImageBitmap(new Blob([bin], { type: 'image/jpeg' }));
+  const f = new VideoFrame(bmp, { timestamp: Math.round((frameIdx * 1e6) / FPS), duration: Math.round(1e6 / FPS) });
+  venc.encode(f, { keyFrame: frameIdx % 60 === 0 });
+  f.close(); bmp.close(); frameIdx++;
+  if (venc.encodeQueueSize > 8) await new Promise((r) => setTimeout(r, 5));
+  return frameIdx;
+};
+
+async function encodeAudio(DUR, EV) {
+  const buf = await window.renderAudio(DUR, EV);
+  const SR = buf.sampleRate, N = Math.round(DUR * SR);
+  const enc = new AudioEncoder({
+    output: (c, m) => { const b = new Uint8Array(c.byteLength); c.copyTo(b); aChunks.push({ b, dur: c.duration }); if (m && m.decoderConfig && m.decoderConfig.description) aDesc = new Uint8Array(m.decoderConfig.description); },
+    error: (e) => { throw e; },
+  });
+  enc.configure({ codec: 'mp4a.40.2', sampleRate: SR, numberOfChannels: 2, bitrate: 192000 });
+  const L = buf.getChannelData(0), R = buf.getChannelData(1);
+  let peak = 0; for (let i = 0; i < N; i++) peak = Math.max(peak, Math.abs(L[i]), Math.abs(R[i]));
+  const norm = peak > 0 ? Math.min(1.6, 0.89 / peak) : 1; // normalise to about -1 dBFS
+  const CH = 4800;
+  for (let s = 0; s < N; s += CH) {
+    const n = Math.min(CH, N - s), data = new Float32Array(n * 2);
+    for (let i = 0; i < n; i++) { data[i] = L[s + i] * norm; data[n + i] = R[s + i] * norm; }
+    enc.encode(new AudioData({ format: 'f32-planar', sampleRate: SR, numberOfFrames: n, numberOfChannels: 2, timestamp: Math.round((s * 1e6) / SR), data }));
+  }
+  await enc.flush();
+  return { SR, peak, norm };
+}
+
+// ---------- tiny MP4 writer
+const u32 = (n) => [(n >>> 24) & 255, (n >>> 16) & 255, (n >>> 8) & 255, n & 255];
+const u16 = (n) => [(n >>> 8) & 255, n & 255];
+const str = (s) => [...s].map((c) => c.charCodeAt(0));
+const flat = (a) => { const out = []; const walk = (x) => { if (x instanceof Uint8Array) for (const v of x) out.push(v); else if (Array.isArray(x)) x.forEach(walk); else out.push(x); }; walk(a); return out; };
+const box = (type, ...body) => { const b = flat(body); return [...u32(b.length + 8), ...str(type), ...b]; };
+const full = (type, v, f, ...body) => box(type, v, (f >> 16) & 255, (f >> 8) & 255, f & 255, ...body);
+const MATRIX = [...u32(0x10000), ...u32(0), ...u32(0), ...u32(0), ...u32(0x10000), ...u32(0), ...u32(0), ...u32(0), ...u32(0x40000000)];
+const runs = (arr) => { const r = []; for (const d of arr) { if (r.length && r[r.length - 1][1] === d) r[r.length - 1][0]++; else r.push([1, d]); } return r; };
+
+function trak({ id, isVideo, timescale, deltas, sizes, keys, offset, desc, SR, durMs }) {
+  const mdDur = deltas.reduce((a, b) => a + b, 0);
+  const tkhd = full('tkhd', 0, 3, u32(0), u32(0), u32(id), u32(0), u32(durMs), u32(0), u32(0), u16(0), u16(0), u16(isVideo ? 0 : 0x100), u16(0), MATRIX, u32(isVideo ? W << 16 : 0), u32(isVideo ? H << 16 : 0));
+  const mdhd = full('mdhd', 0, 0, u32(0), u32(0), u32(timescale), u32(mdDur), u16(0x55c4), u16(0));
+  const hdlr = full('hdlr', 0, 0, u32(0), str(isVideo ? 'vide' : 'soun'), u32(0), u32(0), u32(0), str(isVideo ? 'VideoHandler' : 'SoundHandler'), 0);
+  const mhd = isVideo ? full('vmhd', 0, 1, u16(0), u16(0), u16(0), u16(0)) : full('smhd', 0, 0, u16(0), u16(0));
+  const dinf = box('dinf', full('dref', 0, 0, u32(1), full('url ', 0, 1)));
+  let entry;
+  if (isVideo) {
+    entry = box('avc1', [0, 0, 0, 0, 0, 0], u16(1), u16(0), u16(0), u32(0), u32(0), u32(0), u16(W), u16(H), u32(0x480000), u32(0x480000), u32(0), u16(1), new Array(32).fill(0), u16(0x18), u16(0xffff), box('avcC', desc), box('pasp', u32(1), u32(1)));
+  } else {
+    const asc = desc && desc.length ? Array.from(desc) : [0x11, 0x90];
+    const dsi = [0x05, asc.length, ...asc];
+    const dcd = [0x04, 13 + dsi.length, 0x40, 0x15, 0, 0, 0, ...u32(192000), ...u32(192000), ...dsi];
+    const esd = [0x03, 3 + dcd.length + 3, ...u16(0), 0, ...dcd, 0x06, 1, 0x02];
+    entry = box('mp4a', [0, 0, 0, 0, 0, 0], u16(1), u32(0), u32(0), u16(2), u16(16), u16(0), u16(0), u32((SR << 16) >>> 0), full('esds', 0, 0, esd));
+  }
+  const r = runs(deltas);
+  const stbl = box('stbl',
+    full('stsd', 0, 0, u32(1), entry),
+    full('stts', 0, 0, u32(r.length), r.map(([c, d]) => [...u32(c), ...u32(d)])),
+    ...(isVideo ? [full('stss', 0, 0, u32(keys.length), keys.map((k) => u32(k)))] : []),
+    full('stsc', 0, 0, u32(1), u32(1), u32(sizes.length), u32(1)),
+    full('stsz', 0, 0, u32(0), u32(sizes.length), sizes.map((s) => u32(s))),
+    full('stco', 0, 0, u32(1), u32(offset)));
+  return box('trak', tkhd, box('mdia', mdhd, hdlr, box('minf', mhd, dinf, stbl)));
+}
+
+window.finish = async (DUR, EV) => {
+  await venc.flush();
+  const { SR, peak, norm } = await encodeAudio(DUR, EV);
+  const durMs = Math.round(DUR * 1000);
+  const vSizes = vChunks.map((c) => c.b.length), aSizes = aChunks.map((c) => c.b.length);
+  const vKeys = vChunks.map((c, i) => (c.key ? i + 1 : 0)).filter(Boolean);
+  const vBytes = vSizes.reduce((a, b) => a + b, 0), aBytes = aSizes.reduce((a, b) => a + b, 0);
+  const aDeltas = aChunks.map((c) => Math.round(((c.dur || 21333) * SR) / 1e6));
+  const ftyp = box('ftyp', str('isom'), u32(512), str('isom'), str('iso2'), str('avc1'), str('mp41'));
+  const build = (vOff, aOff) => box('moov',
+    full('mvhd', 0, 0, u32(0), u32(0), u32(1000), u32(durMs), u32(0x10000), u16(0x100), u16(0), u32(0), u32(0), MATRIX, new Array(24).fill(0), u32(3)),
+    trak({ id: 1, isVideo: true, timescale: FPS * 1000, deltas: vChunks.map(() => 1000), sizes: vSizes, keys: vKeys, offset: vOff, desc: vDesc, durMs }),
+    trak({ id: 2, isVideo: false, timescale: SR, deltas: aDeltas, sizes: aSizes, offset: aOff, desc: aDesc, SR, durMs }));
+  const moovLen = build(0, 0).length;
+  const mdatStart = ftyp.length + moovLen + 8;
+  const moov = build(mdatStart, mdatStart + vBytes);
+  const total = ftyp.length + moov.length + 8 + vBytes + aBytes;
+  const out = new Uint8Array(total);
+  let p = 0; const put = (a) => { out.set(a, p); p += a.length; };
+  put(ftyp); put(moov); put(u32(8 + vBytes + aBytes)); put(str('mdat'));
+  vChunks.forEach((c) => put(c.b)); aChunks.forEach((c) => put(c.b));
+  window.__mp4 = out;
+  return { total, frames: vChunks.length, keys: vKeys.length, audioChunks: aChunks.length, peak, norm, vDesc: !!vDesc, aDesc: aDesc ? Array.from(aDesc) : null };
+};
+window.slice = (i, n) => { const s = window.__mp4.subarray(i, i + n); let bin = ''; for (let k = 0; k < s.length; k += 0x8000) bin += String.fromCharCode.apply(null, s.subarray(k, k + 0x8000)); return btoa(bin); };
+</script>
+</body></html>

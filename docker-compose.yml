@@ -12,5 +12,39 @@ services:
       timeout: 3s
       retries: 3
 
+  web:
+    build:
+      context: .
+      dockerfile: apps/web/Dockerfile
+    ports:
+      - '3000:3000'
+    environment:
+      NODE_ENV: production
+      # DATABASE_URL defaults to ./data/leaddesk.db relative to WORKDIR (/monorepo/apps/web)
+      # which is inside the web_data volume below — no explicit override needed.
+      JWT_SECRET: change-me-to-a-long-random-secret-string-0123456789
+      REDIS_URL: redis://redis:6379
+      JOBS_ENABLED: 'true'
+      AT_RISK_DAYS: '3'
+      COLD_AFTER_DAYS: '7'
+      COLD_AFTER_UNANSWERED: '3'
+      MISSED_AFTER_HOURS: '24'
+    volumes:
+      # Persist SQLite database across container restarts
+      - web_data:/monorepo/apps/web/data
+    depends_on:
+      - redis
+    init: true
+
+  showroom:
+    build:
+      context: .
+      dockerfile: apps/showroom/Dockerfile
+    ports:
+      - '3001:80'
+    depends_on:
+      - web
+
 volumes:
   redis_data:
+  web_data:

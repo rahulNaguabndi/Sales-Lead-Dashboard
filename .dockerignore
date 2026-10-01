@@ -1,0 +1,12 @@
+node_modules
+apps/*/node_modules
+packages/*/node_modules
+.git
+.next
+apps/*/dist
+apps/web/data
+brag-output
+*.log
+.env
+apps/**/.env
+apps/**/.env.local

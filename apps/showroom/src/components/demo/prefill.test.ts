@@ -33,3 +33,17 @@ describe('prefill', () => {
     expect(call / 2000).toBeGreaterThan(0.5);
   });
 });
+
+describe('validMobileDigits', () => {
+  it('produces numbers the intake API accepts for every country', async () => {
+    const { COUNTRY_CODES } = await import('@leaddesk/shared');
+    const { isValidPhoneNumber } = await import('libphonenumber-js');
+    const { validMobileDigits } = await import('./prefill');
+    let seed = 1;
+    const rng = () => ((seed = (seed * 16807) % 2147483647) - 1) / 2147483646;
+    for (const c of COUNTRY_CODES) {
+      for (let i = 0; i < 5; i++)
+        expect(isValidPhoneNumber(validMobileDigits(c, rng), c), c).toBe(true);
+    }
+  });
+});

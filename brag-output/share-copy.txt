@@ -1,0 +1,5 @@
+A buyer clicks "Send enquiry" on the showroom site, and seconds later the lead pops up live in the sales inbox.
+
+From there, EuroDrive Lead Desk keeps the full history on one timeline. It respects each customer's channel and hours, lets managers assign one lead or ten with each rep's load in view, makes sure follow-ups never slip, and has AI draft the next message in the customer's own language.
+
+Built in one day from 20 feature specs, with up to 6 Claude agents building in parallel and 837 tests.

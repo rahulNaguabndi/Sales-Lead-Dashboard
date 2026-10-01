@@ -41,6 +41,7 @@ describe('getLeadDetail', () => {
     const byRef = new Map(d.history.previousLeads.map((p) => [p.reference, p]));
     expect(byRef.get('REF-L5')?.canView).toBe(true); // anna's own
     expect(byRef.get('REF-L2')?.canView).toBe(false); // sofia's, other team
+    expect(byRef.get('REF-L2')?.ownerName).toBe('sofia'); // says whose it is
     expect(d.history.purchases).toEqual([
       { vehicleModel: 'metro-hatch', amount: 2150000, purchasedAt: 5 },
     ]);

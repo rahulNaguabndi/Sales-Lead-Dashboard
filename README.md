@@ -5,8 +5,10 @@ A Sales Lead Management Tool for a fictional European car dealership group, "Eur
 | Deliverable | Where |
 |---|---|
 | **1. System Design Document** | [`docs/SYSTEM-DESIGN.md`](docs/SYSTEM-DESIGN.md): architecture diagram, components, data flow, tech choices, observability, GenAI in design |
-| **2. Working code** | This repository. Build, run and test instructions are below, and the [AI Collaboration Narrative](#ai-collaboration-narrative) is at the end |
+| **2. Working code** | This repository. Build, run and test instructions below. [AI Collaboration Narrative](#how-this-was-built) at the end. |
 | **3. Video** | Script and demo plan: [`docs/VIDEO-SCRIPT.md`](docs/VIDEO-SCRIPT.md) |
+
+---
 
 ## Scenario and Chosen Layer
 
@@ -22,7 +24,9 @@ A Sales Lead Management Tool for a fictional European car dealership group, "Eur
 
 **Beyond the mandatory scope:** JWT auth · Rep → Manager → VP hierarchy with RBAC · stage pipeline (kanban, won/lost) · follow-ups and going-cold detection · explainable lead scoring · intake with dedupe, routing and auto-assign · live updates (SSE + Redis pub/sub) · customer channel preferences (WhatsApp/call/SMS/email deep links) · offers matching · manager/VP dashboards and demographics · AI assist (summary, next best action, draft message) · audit log.
 
-## Tech Stack (summary)
+---
+
+## Tech Stack
 
 TypeScript · Next.js 14 (App Router) · SQLite (WAL) + Drizzle ORM · Redis 7 · Zod (shared contracts) · jose JWT + bcrypt · TanStack Query/Table · Tailwind + shadcn/ui · Recharts · Anthropic Claude SDK · Vitest · Playwright. The reasoning for each choice is in the [System Design §6](docs/SYSTEM-DESIGN.md#6-technology-choices).
 
@@ -38,53 +42,162 @@ docs/            product spec, domain model, architecture, 20 feature specs, sys
 specs/           Spec Kit artifacts per feature (spec, plan, tasks, contracts, build REPORT)
 ```
 
-## Build and Run
+---
 
-**Prerequisites:** Node.js ≥ 20, npm, Docker (for Redis). Redis is optional at runtime: without it the app runs in degraded mode, falling back to in-process pub/sub and in-memory rate limits.
+## Installation and Running
+
+### Prerequisites
+
+| Tool | Version | Notes |
+|---|---|---|
+| Node.js | ≥ 20 | |
+| npm | bundled with Node | |
+| Docker + Docker Compose | any recent | Required only if you use the Docker path or want Redis |
+
+Redis is **optional** at runtime. Without it the app runs in degraded mode — in-process pub/sub, in-memory rate limits, no token revocation or response caching — but all core features work.
+
+---
+
+### Option A — Docker (easiest, single command after build)
+
+This runs the full stack: Next.js web app, Vite showroom (served by nginx), and Redis. The SQLite database is persisted in a named Docker volume across restarts.
+
+**First run — build images and start everything:**
 
 ```bash
-docker compose up -d redis
+docker compose up --build
 ```
+
+**Seed the database** (first run only; the DB is empty on a fresh volume):
+
+```bash
+docker compose exec web sh -c "../../node_modules/.bin/tsx server/db/seed/index.ts"
+```
+
+**Subsequent starts** (no rebuild needed):
+
+```bash
+docker compose up
+```
+
+**Stop everything:**
+
+```bash
+docker compose down
+```
+
+**Stop and wipe the database** (deletes the SQLite volume):
+
+```bash
+docker compose down -v
+```
+
+Once running:
+
+| App | URL |
+|---|---|
+| Lead Desk (web) | http://localhost:3000 |
+| Showroom (lead generation) | http://localhost:3001 |
+
+> **Note:** The showroom's API URL (`http://localhost:3000`) is baked into the browser bundle at build time. If you deploy to a non-localhost domain, rebuild with the correct URL:
+> ```bash
+> docker compose build --build-arg VITE_INTAKE_URL=https://your-domain/api/intake/leads showroom
+> ```
+
+#### Running without Redis in Docker
+
+The web app degrades gracefully when Redis is unreachable. To start only web and showroom (no Redis container):
+
+```bash
+docker compose up web showroom
+```
+
+You'll see a `[Redis error] ... degraded mode` warning in the web logs — that's expected and harmless.
+
+---
+
+### Option B — Local development (hot reload, no Docker required)
+
+**1. Install dependencies**
 
 ```bash
 npm install
 ```
 
-Copy the env templates (the defaults work for local development; leave `ANTHROPIC_API_KEY` empty to use the rule-based AI fallback):
+**2. Copy environment files**
+
+The defaults work out of the box. Leave `ANTHROPIC_API_KEY` empty to use the rule-based AI fallback (the app never breaks without it):
 
 ```bash
-cp apps/web/.env.example apps/web/.env && cp apps/showroom/.env.example apps/showroom/.env
+cp apps/web/.env.example apps/web/.env
+cp apps/showroom/.env.example apps/showroom/.env
 ```
 
-Create the database, run migrations and load the deterministic seed (`SEED=42`, 800+ leads):
+**3. Start Redis** (optional — skip this step if you don't have Docker; the app degrades gracefully)
+
+```bash
+docker compose up -d redis
+```
+
+**4. Create the database, run migrations and seed it** (800+ leads, deterministic `SEED=42`)
 
 ```bash
 npm run db:reset
 ```
 
-Start the web app (http://localhost:3000) and the showroom (http://localhost:3001):
+**5. Start the dev servers**
 
 ```bash
 npm run dev
 ```
 
-Optionally, stream demo leads into the intake API and watch them appear live in the inbox:
+This starts:
+- `http://localhost:3000` — the Lead Desk (Next.js, hot reload)
+- `http://localhost:3001` — the Showroom (Vite, hot reload)
+
+**6. Stream demo leads** (optional — watch them appear live in the inbox)
 
 ```bash
 npm run simulate -- --count 5
 ```
 
-**Demo users** (password `demo1234`; the login page also has one-click persona buttons):
+> **Certificate / proxy error?** Set `NODE_USE_SYSTEM_CA=1` before npm commands (on Windows: `setx NODE_USE_SYSTEM_CA 1`, then open a new terminal).
+
+---
+
+### Demo users
+
+Password for all accounts: **`demo1234`**. The login page also has one-click persona buttons.
 
 | Persona | Email | Sees |
 |---|---|---|
-| VP | `isabelle.laurent@eurodrive.test` | the whole organization |
-| Manager (DACH) | `lukas.becker@eurodrive.test` | their team |
-| Rep (South) | `sofia.rossi@eurodrive.test` | own leads plus their team's unassigned leads |
+| VP | `isabelle.laurent@eurodrive.test` | the whole organisation |
+| Manager (DACH) | `lukas.becker@eurodrive.test` | their team's leads |
+| Rep (South) | `sofia.rossi@eurodrive.test` | own leads plus their team's unassigned pool |
 
-Production build: `npm run build -w apps/web && npm run start -w apps/web`.
+---
 
-> If `npm install` fails with a certificate error (for example behind a corporate proxy), set `NODE_USE_SYSTEM_CA=1` first (`setx NODE_USE_SYSTEM_CA 1` on Windows, then open a new terminal).
+### Production build (without Docker)
+
+```bash
+npm run build -w apps/web
+npm run start -w apps/web
+```
+
+---
+
+## Running without Redis (any mode)
+
+The app is designed so Redis is never a hard dependency. The Redis client (`apps/web/server/redis/client.ts`) connects lazily with a 500 ms timeout and 10 s reconnect cadence. When it can't reach Redis it sets `status: 'degraded'` and logs one warning — nothing throws. Features that depend on Redis degrade as follows:
+
+| Feature | Without Redis |
+|---|---|
+| Live inbox updates (SSE) | Falls back to in-process EventEmitter — works within one process, no cross-instance fanout |
+| Auth token revocation | Tokens are valid until natural expiry (15 min) |
+| Intake rate limiting | Falls back to in-memory counters (resets on restart) |
+| Response caching | Cache misses every time; all reads hit the DB |
+
+---
 
 ## Test
 
@@ -102,7 +215,7 @@ Run the end-to-end tests (Playwright starts the dev server automatically):
 npm run test:e2e
 ```
 
-Run the static checks (ESLint with zero warnings allowed, and strict TypeScript across all workspaces):
+Run the static checks (ESLint zero warnings, strict TypeScript across all workspaces):
 
 ```bash
 npm run lint && npm run typecheck
@@ -118,92 +231,161 @@ What the suite covers:
 
 | Area | Examples |
 |---|---|
-| **Core business rules** (pure unit) | stage state machine and allowed transitions · lead scoring weights and priority bands · follow-up and going-cold rules · offer eligibility · money in cents · channel deep links · customer time zones |
-| **Activity logging (R3)** | validation (outcome rules, note length, follow-up window, malformed or oversized bodies) · **atomicity** (activity + follow-up + stage + score + audit in one transaction) · idempotent replay by `clientRequestId` · append-only triggers reject UPDATE/DELETE |
-| **Inbox and detail (R1, R2)** | filters, search, ranking, pagination · timeline merge and ordering · a not-found response that doesn't reveal whether the lead exists |
-| **Security / RBAC** | `authorize()` matrix per role and action · scope CTE (rep / manager / VP) · per-endpoint RBAC tests (activities, stage, assignment, AI, audit) · JWT, revocation, login rate limit · PII scrubbing before AI prompts |
-| **Intake pipeline** | API key, CORS, rate limit, payload cap, honeypot · dedupe by phone/email · routing and auto-assign · simulator smoke test |
+| **Core business rules** (pure unit) | stage machine transitions · scoring weights and priority bands · follow-up and cold rules · offer eligibility · money in cents · channel deep links |
+| **Activity logging (R3)** | validation (outcome rules, note length, follow-up window, oversized bodies) · atomicity (activity + follow-up + stage + score + audit in one transaction) · idempotent replay by `clientRequestId` · append-only triggers reject UPDATE/DELETE |
+| **Inbox and detail (R1, R2)** | filters, search, ranking, pagination · timeline merge and ordering · 404 that doesn't leak lead existence |
+| **Security / RBAC** | `authorize()` matrix per role and action · scope CTE (rep / manager / VP) · per-endpoint RBAC tests · JWT, revocation, login rate limit · PII scrubbing before AI prompts |
+| **Intake pipeline** | API key, CORS, rate limit, payload cap, honeypot · dedupe by phone/email · routing and auto-assign |
 | **Live updates** | SSE hub scope filtering, replay and resync · Redis-down fallback to the in-memory bus |
 | **Background jobs** | cold detector, follow-up sweeper and score freshness, with locks |
-| **E2E (Playwright)** | login per persona · the **core loop** (inbox → lead → log activity → visible in timeline after reload) · showroom intake → live toast · pipeline drag and drop · follow-ups · offers · dashboards · AI assist · audit |
+| **E2E (Playwright)** | login per persona · the core loop (inbox → lead → log activity → visible after reload) · showroom intake → live toast · pipeline drag and drop · follow-ups · offers · dashboards · AI assist · audit |
 
 Integration tests run real route handlers against a real SQLite file, not mocks, so SQL, triggers and transactions are exercised.
 
+---
+
 ## API Quick Reference (cURL)
 
-Authentication is a JWT in an `httpOnly` cookie, so use a cookie jar. Run these in Git Bash, WSL or macOS/Linux; on Windows PowerShell, call `curl.exe`.
+Authentication is a JWT in an `httpOnly` cookie. Use a cookie jar. Run these in Git Bash, WSL or macOS/Linux; on Windows PowerShell, call `curl.exe`.
 
 ```bash
-curl -s -c jar.txt -H "Content-Type: application/json" -d '{"email":"sofia.rossi@eurodrive.test","password":"demo1234"}' http://localhost:3000/api/auth/login
+curl -s -c jar.txt -H "Content-Type: application/json" \
+  -d '{"email":"sofia.rossi@eurodrive.test","password":"demo1234"}' \
+  http://localhost:3000/api/auth/login
 ```
 
-**R1:** list my leads (filters: `view`, `stage`, `source`, `priority`, `q`, `page`, `pageSize`):
+**R1** — list my leads (filters: `view`, `stage`, `source`, `priority`, `q`, `page`, `pageSize`):
 
 ```bash
 curl -s -b jar.txt "http://localhost:3000/api/leads?view=mine&stage=NEW,CONTACTED&pageSize=10"
 ```
 
-**R2:** lead detail and its timeline (replace `LEAD_ID` with an `id` from the list):
+**R2** — lead detail and its timeline (replace `LEAD_ID`):
 
 ```bash
 curl -s -b jar.txt http://localhost:3000/api/leads/LEAD_ID
-```
-
-```bash
 curl -s -b jar.txt http://localhost:3000/api/leads/LEAD_ID/activities
 ```
 
-**R3:** log an activity. `clientRequestId` is a ULID used for idempotency; send the same one twice and you get one row. (Browser mutations must be same-origin; cURL sends no `Origin` header, which is allowed.)
+**R3** — log an activity (`clientRequestId` is a ULID used for idempotency):
 
 ```bash
-curl -s -b jar.txt -H "Content-Type: application/json" -d '{"clientRequestId":"01J9ZZZZZZZZZZZZZZZZZZZZZZ","type":"CALL","outcome":"CONNECTED","note":"Discussed financing options, sending an offer tomorrow."}' http://localhost:3000/api/leads/LEAD_ID/activities
+curl -s -b jar.txt -H "Content-Type: application/json" \
+  -d '{"clientRequestId":"01J9ZZZZZZZZZZZZZZZZZZZZZZ","type":"CALL","outcome":"CONNECTED","note":"Discussed financing options."}' \
+  http://localhost:3000/api/leads/LEAD_ID/activities
 ```
 
 **Public intake** (what the showroom and simulator call; API-key authenticated, no cookie):
 
 ```bash
-curl -s -H "Content-Type: application/json" -H "X-API-Key: showroom-dev-key" -d '{"firstName":"Giulia","lastName":"Bianchi","phone":"+393471234567","country":"IT","language":"it","preferredChannel":"WHATSAPP","source":"WEBSITE","message":"Interested in a test drive"}' http://localhost:3000/api/intake/leads
+curl -s -H "Content-Type: application/json" -H "X-API-Key: showroom-dev-key" \
+  -d '{"firstName":"Giulia","lastName":"Bianchi","phone":"+393471234567","country":"IT","language":"it","preferredChannel":"WHATSAPP","source":"WEBSITE","message":"Interested in a test drive"}' \
+  http://localhost:3000/api/intake/leads
 ```
 
-Errors use one shape everywhere: `{"error":{"code":"VALIDATION_ERROR","message":"Request is invalid","fields":{"outcome":"Outcome is required"}}}`, with 400/401/403/404/409/413/415/429 as appropriate. Other endpoints include stage changes (`PATCH /api/leads/:id/stage`), claim and assign, follow-ups, offers, dashboards, the audit log and the SSE stream (`GET /api/events`). The full list lives under [`apps/web/app/api`](apps/web/app/api), and each feature's contracts are in `specs/NNN-*/contracts/`.
+Errors use one shape everywhere: `{"error":{"code":"VALIDATION_ERROR","message":"...","fields":{...}}}` with 400/401/403/404/409/413/415/429 as appropriate. Other endpoints: stage changes (`PATCH /api/leads/:id/stage`), claim and assign, follow-ups, offers, dashboards, audit log, SSE stream (`GET /api/events`). Full list under [`apps/web/app/api`](apps/web/app/api).
+
+---
 
 ## Design Highlights
 
-- **Strict layering:** route handler → Zod → `authorize()` → service → repository. Services never import Next.js, so the core can be extracted into its own service.
-- **Authorization on every lead-scoped endpoint.** List and detail share one scope function (a recursive CTE), so the inbox can never show a lead that the detail page refuses.
+- **Strict layering:** route handler → Zod → `authorize()` → service → repository. Services never import Next.js, so the core can be extracted into its own process.
+- **Authorization on every lead-scoped endpoint.** List and detail share one scope function (a recursive CTE), so the inbox can never show a lead the detail page refuses.
 - **Append-only history:** SQLite triggers `RAISE(ABORT)` on any UPDATE or DELETE of `activities` and `audit_log`.
-- **Correctness under retries and concurrency:** idempotent writes (`clientRequestId`, intake `idempotencyKey`), optimistic locking (`leads.version`), and every multi-row write in one transaction.
+- **Correctness under retries:** idempotent writes (`clientRequestId`, intake `idempotencyKey`), optimistic locking (`leads.version`), every multi-row write in one transaction.
 - **Graceful degradation:** Redis down → DB, in-process emitter and in-memory limits. Claude down or no key → deterministic rule-based AI. The app never hard-fails on an external service.
-- **Privacy:** no PII in logs (the logger schema has no PII fields) and no email or phone in AI prompts (scrubbed and unit-tested).
-- **Observability:** structured JSON logs with `requestId`, stable error codes, dependency-health logs, an audit trail with before/after diffs, and per-run job logs. The OpenTelemetry metrics and tracing plan is in [System Design §8](docs/SYSTEM-DESIGN.md#8-observability-strategy).
+- **Privacy:** no PII in logs, no email or phone in AI prompts (scrubbed and unit-tested).
+- **Observability:** structured JSON logs with `requestId`, stable error codes, dependency-health logs, an audit trail with before/after diffs, per-run job logs.
 
-## AI Collaboration Narrative
+---
 
-I built this with **Claude Code** as the primary engineer under my direction, and **GitHub Spec Kit** as the contract between us. My role was product owner, architect and reviewer; Claude's was to write specs, plans and code inside the guardrails I set.
+## How This Was Built
 
-### Strategy: spec first, then parallel builds
-1. **Docs before code.** Before any scaffolding I worked with Claude to produce the full product spec: overview and priorities, personas, user flows, domain model, architecture with ADRs, and **20 feature specs** (`docs/features/F01–F20`) from a common template. AI is very good at producing code quickly, so the expensive mistakes are about *what* to build. That's where I spent my time.
-2. **A constitution as guardrails.** I encoded the non-negotiables in `docs/speckit/constitution.md`: authorize every lead endpoint, append-only activities, single-transaction writes, money in integer cents, graceful degradation, no N+1 on hot paths, and no PII to the AI provider. Every generated plan was checked against it with `/speckit-analyze`.
-3. **Designed for parallel AI work.** I split the features into **5 dependency waves** with a **path-ownership table**: each feature owns distinct files, and shared files only allow append-only registrations (the lead-detail slot registry, the dashboard tab registry). F01 owned the whole schema and shared contracts, so parallel sessions never fought over migrations.
-4. **Automated pipeline.** I wrote two project skills, `build-feature` (specify → self-answered clarify → plan → tasks → analyze → implement → verify → report → commit) and `integrate-wave` (merge, resolve by ownership rules, run every check, verify the wave gate), plus a PowerShell orchestrator (`scripts/speckit/run-waves.ps1`) that ran **one headless Claude session per feature in its own git worktree**, each with its own port and Redis DB. Wave 3 alone had six features building side by side.
+This repository is the output of an **AI-native engineering process** where I acted as product owner, architect and reviewer, and [Claude Code](https://claude.com/claude-code) (Anthropic's agentic CLI) acted as the primary implementation engineer under structured direction. The process had three layers: **product specification**, **workflow orchestration via Spec Kit**, and **verification gates**.
 
-### Verification and refinement
-- **Gates, not trust.** A wave only merged when `lint` (zero warnings), `typecheck`, `npm test` and `npm run test:e2e` were all green and the wave gate in `docs/features/README.md` was met. The mandatory R1–R3 loop had to be demoable after wave 2, before any "nice-to-have" work merged.
-- **Build reports.** Every feature session wrote `specs/NNN-*/REPORT.md` listing what was done, the assumptions it made and the follow-ups. Integration logs are in `docs/speckit/runs/`. I read these to decide what to accept, fix or push back on.
-- **Tests first for pure logic.** The stage machine, scoring, follow-up rules and offer eligibility were specified as test cases before implementation. Integration tests run real handlers against real SQLite rather than mocks, so AI-generated code couldn't pass by mocking away the hard parts.
-- **Hands-on QA as each persona.** After the last wave I had Claude drive the real UI in a browser as Rep, Manager and VP and produce a severity-ranked audit (`docs/audit/2026-10-01-role-based-ux-audit.md`). It caught real problems that green tests missed: an **RBAC regression** where reps could list their whole team's leads (and the detail page then returned 404), a kanban board that silently truncated to 50 leads, a timeline that didn't refresh after logging an activity, and inconsistent labels. Those findings drove the final "improvements" pass. The RBAC guard was restored and is covered by a test.
-- **Fixing flakiness at the root.** Several e2e failures traced to input being sent before React hydration. Rather than adding blind sleeps, we waited on hydration and used `toPass` retries only where the UI is genuinely asynchronous.
+### 1. Product specification first
 
-### Where I overrode or constrained the AI
-- **Caching (F20):** Claude recommended a Redis strategy early. I deliberately kept it as a documented *pending decision* and only adopted narrow cache-aside where the data is safe to cache (active offers, AI results), so correctness and scoping weren't traded away for speed.
-- **Scope control:** real WhatsApp/Twilio integration became deep links behind a `ChannelAdapter` interface, and ML scoring became an explainable rule-based score. Both are honest for a demo and easy to swap later.
-- **AI in the product:** the AI assist feature runs Claude (`claude-opus-5-5`, effort `low`) with PII scrubbing, Zod-validated output, response caching and a deterministic fallback, so the demo can't break on the network or an API key. An eval script (`npm run eval:ai`) checks schema validity, language match and latency.
+Before any code was written, all product decisions were captured in `docs/`:
+
+- `docs/00-overview.md` — problem statement, vision, priorities, glossary, and 14 global architectural decisions (money in integer cents, append-only audit trail, graceful degradation, no PII to the AI, etc.)
+- `docs/01-personas.md` — three personas (Rep, Manager, VP), their jobs-to-be-done, and permission boundaries
+- `docs/02-user-flows.md` — end-to-end journeys in Mermaid diagrams
+- `docs/03-domain-model.md` — the full entity schema, all enums, the stage machine, the event catalogue
+- `docs/04-architecture.md` — tech stack decisions with rationale, ADRs, NFRs, and the layering rule (`route handler → Zod → authorize → service → repository`)
+- `docs/features/F01–F20-*.md` — 20 feature specs from a common template, each with user stories, functional requirements, edge cases, RBAC rules, test cases and success criteria
+
+The expensive mistakes in AI-assisted development are about *what* to build. Writing the spec took the most time and was entirely human-directed.
+
+### 2. Spec Kit as the workflow engine
+
+[GitHub Spec Kit](https://github.com/specify-sh/specify-cli) is a CLI tool that structures the process of taking a product spec through to running code. Installed as a Claude Code integration, it exposes slash commands that drive distinct phases:
+
+| Command | What it does |
+|---|---|
+| `/speckit-specify` | Turns a feature description into a structured spec artifact (`specs/NNN-*/spec.md`) |
+| `/speckit-clarify` | Surfaces underspecified areas; I answered from the `docs/` files |
+| `/speckit-plan` | Produces an implementation plan (`plan.md`) against the architecture and path-ownership rules |
+| `/speckit-tasks` | Generates a dependency-ordered task list (`tasks.md`) |
+| `/speckit-analyze` | Cross-checks spec / plan / tasks against the constitution for consistency and rule violations |
+| `/speckit-implement` | Executes each task, writes code, runs verification |
+
+I encoded non-negotiable rules in `docs/speckit/constitution.md` — authorize every lead endpoint, append-only activities, single-transaction writes, money in integer cents, no N+1 on hot paths, no PII to the AI. Every generated plan was checked against it before implementation began.
+
+### 3. Parallel builds by dependency wave
+
+Features were split into **5 dependency waves** (see [`docs/features/README.md`](docs/features/README.md)) with a **path-ownership table** to prevent merge conflicts between parallel sessions. Each feature owns distinct files; shared files are append-only.
+
+```
+Wave 0:  F01 — Platform Foundation (schema, shared contracts, app shell) — single stream
+Wave 1:  F02 Auth · F03 RBAC · F09 Scoring · F13 Showroom — 4 parallel streams
+Wave 2:  F04 Inbox · F05 Detail · F06 Activity · F10 Intake — 4 parallel streams  ← R1–R3 must be green here
+Wave 3:  F07 Stages · F08 Follow-ups · F11 Assignment · F12 Live · F14 Channels · F15 Offers — 6 parallel
+Wave 4:  F16 Dashboards · F17 Demographics · F18 AI Assist · F19 Audit Log · F20 Caching — 5 parallel
+```
+
+Two project-level Spec Kit skills automated the full pipeline:
+- **`build-feature`** — took one feature through specify → clarify (self-answered from docs) → plan → tasks → analyze → implement → verify → `REPORT.md` → commit, without asking questions
+- **`integrate-wave`** — merged a finished wave's branches into `main`, resolved conflicts by ownership rules, ran all checks, verified the wave gate, and tagged `wave-N-done`
+
+A PowerShell orchestrator (`scripts/speckit/run-waves.ps1`) ran **one headless Claude session per feature in its own git worktree**, each with its own port and Redis DB number. Wave 3 had six features building side by side.
+
+### 4. Verification gates, not trust
+
+A wave only merged when all of these were green:
+- `npm run lint` — ESLint, zero warnings allowed
+- `npm run typecheck` — strict TypeScript across all three workspaces
+- `npm test` — all 1,236 Vitest tests (unit + integration against real SQLite)
+- `npm run test:e2e` — 16 Playwright specs
+- Wave gate in `docs/features/README.md` — mandatory scenario demoable
+
+Integration tests run real route handlers against a real SQLite file, not mocks. AI-generated code could not pass by mocking away the hard parts.
+
+### 5. Persona-based UI audit
+
+After the final wave, I had Claude drive the full app in a browser as each persona (Rep, Manager, VP) and produce a severity-ranked findings report (`docs/audit/2026-10-01-role-based-ux-audit.md`). This caught real problems that green tests had missed:
+
+- An **RBAC regression** where reps could list their whole team's leads (the detail page then returned 403, creating a confusing UX)
+- A kanban board silently truncating to 50 leads
+- The activity timeline not refreshing after logging without a page reload
+- Inconsistent lead count labels across widgets
+
+Those findings drove the final "improvements" pass. The RBAC guard was restored and is now covered by a dedicated test.
+
+### Where I constrained the AI
+
+- **Caching (F20):** Claude recommended a Redis caching strategy early. I kept it as a documented pending decision and only approved narrow cache-aside where the data is provably safe (active offers, AI results), so correctness wasn't traded for speed.
+- **Scope control:** real WhatsApp/Twilio became deep links behind a `ChannelAdapter` interface. ML scoring became an explainable rule-based score. Both are honest for a demo and easy to swap.
+- **AI in the product:** the AI assist feature runs Claude (`claude-opus-5-5`, effort `low`) with PII scrubbing, Zod-validated output, response caching and a deterministic fallback — the demo cannot break on a network failure or absent API key. An eval script (`npm run eval:ai -w apps/web`) checks schema validity, language match and latency.
 
 ### What I'd do differently
-Run the persona-based UI audit after *every* wave, not just at the end. Tests proved each feature's contract, but cross-feature consistency (shared labels, counts that agree across widgets, cache invalidation after writes) only showed up when a "user" walked through the whole product.
+
+Run the persona-based UI audit after *every* wave, not just at the end. Tests proved each feature's contract, but cross-feature consistency (shared labels, counts that agree across widgets, cache invalidation after writes) only appeared when a "user" walked through the whole product.
+
+---
 
 ## Further Reading
+
 - [System Design Document](docs/SYSTEM-DESIGN.md)
 - [Product overview](docs/00-overview.md) · [Personas](docs/01-personas.md) · [User flows](docs/02-user-flows.md) · [Domain model](docs/03-domain-model.md) · [Architecture and ADRs](docs/04-architecture.md)
-- [Feature index and build waves](docs/features/README.md) · [Spec Kit constitution](docs/speckit/constitution.md) · [Workflow](docs/speckit/WORKFLOW.md)
+- [Feature index and build waves](docs/features/README.md) · [Spec Kit constitution](docs/speckit/constitution.md) · [Spec Kit workflow](docs/speckit/WORKFLOW.md)
 - [Role-based UX and QA audit](docs/audit/2026-10-01-role-based-ux-audit.md)

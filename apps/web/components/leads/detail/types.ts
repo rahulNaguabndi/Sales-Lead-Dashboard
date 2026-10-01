@@ -71,6 +71,8 @@ export type LeadDetail = {
       vehicleModel: string | null;
       stage: Stage;
       createdAt: number;
+      /** Null when unassigned. */
+      ownerName: string | null;
       canView: boolean;
     }[];
     purchases: { vehicleModel: string; amount: number; purchasedAt: number }[];
