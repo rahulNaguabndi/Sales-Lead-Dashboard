@@ -14,9 +14,12 @@ export function TopBar({
   title?: string;
 }) {
   return (
-    <header className="flex h-12 shrink-0 items-center gap-4 border-b border-slate-800 bg-slate-950 px-4">
-      <h1 className="w-56 truncate text-base font-semibold">{title}</h1>
-      <div className="flex flex-1 justify-center">
+    <header className="flex h-12 shrink-0 items-center gap-2 border-b border-slate-800 bg-slate-950 px-3 sm:gap-4 sm:px-4">
+      {/* Pages own the h1; the bar only shows a label (an empty h1 here broke the outline). */}
+      {title ? (
+        <span className="hidden w-56 truncate text-base font-semibold lg:block">{title}</span>
+      ) : null}
+      <div className="hidden min-w-0 flex-1 justify-center md:flex">
         <Input
           readOnly
           placeholder="Search leads (⌘K)"
@@ -24,7 +27,7 @@ export function TopBar({
           className="h-8 max-w-md bg-slate-900"
         />
       </div>
-      <div className="flex items-center gap-3">
+      <div className="ml-auto flex items-center gap-2 sm:gap-3">
         {/* Mount points: F15 offers strip, F12 live indicator, F02 user menu. */}
         <div data-slot="offers-strip">
           <OffersStrip />

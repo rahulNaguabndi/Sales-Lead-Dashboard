@@ -28,6 +28,7 @@ test('AI assist: rule-based card, draft prefills the composer', async ({ page })
   await signIn(page);
   await page.goto(`/leads/${openLeadWithPhone()}`);
   const card = page.getByLabel('AI assist');
+  await card.getByRole('button', { name: 'Suggest next step' }).click();
   await expect(card.getByTestId('ai-summary')).toBeVisible({ timeout: 30_000 });
   await expect(card.getByTestId('ai-source')).toHaveText(/Rule-based|AI-generated/);
   await expect(card.getByTestId('ai-nba')).toBeVisible();

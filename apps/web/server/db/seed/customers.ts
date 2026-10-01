@@ -85,15 +85,21 @@ const AGE_RANGE: Record<Exclude<AgeBand, 'UNKNOWN'>, [number, number]> = {
   '60+': [61, 85],
 };
 
-const EMAIL_DOMAINS = [
-  'gmail.com',
-  'outlook.com',
-  'gmx.net',
-  'web.de',
-  'orange.fr',
-  'libero.it',
-  'proton.me',
-];
+// International providers anywhere; national ones only in their own country (a German customer
+// with an @orange.fr address looked wrong in demos).
+const GLOBAL_DOMAINS = ['gmail.com', 'outlook.com', 'proton.me'];
+const LOCAL_DOMAINS: Record<string, string[]> = {
+  DE: ['gmx.net', 'web.de'],
+  AT: ['gmx.at'],
+  CH: ['bluewin.ch'],
+  FR: ['orange.fr'],
+  BE: ['telenet.be'],
+  NL: ['ziggo.nl'],
+  IT: ['libero.it'],
+  ES: ['telefonica.es'],
+  PT: ['sapo.pt'],
+};
+const emailDomains = (country: string) => [...GLOBAL_DOMAINS, ...(LOCAL_DOMAINS[country] ?? [])];
 
 export type CustomersResult = {
   customers: CustomerRow[];
@@ -141,10 +147,10 @@ export function seedCustomers(count = 600): CustomersResult {
     let email: string | null = null;
     if (hasEmail) {
       let base = `${slug(firstName)}.${slug(lastName)}`;
-      email = `${base}@${rng.pick(EMAIL_DOMAINS)}`;
+      email = `${base}@${rng.pick(emailDomains(country))}`;
       while (emails.has(email)) {
         base = `${slug(firstName)}.${slug(lastName)}${rng.int(2, 99)}`;
-        email = `${base}@${rng.pick(EMAIL_DOMAINS)}`;
+        email = `${base}@${rng.pick(emailDomains(country))}`;
       }
       emails.add(email);
     }

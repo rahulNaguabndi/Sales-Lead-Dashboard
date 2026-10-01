@@ -5,9 +5,9 @@ export default function LeadNotFound() {
     <div className="space-y-3 p-6">
       <h1 className="text-lg font-semibold">Lead not found</h1>
       <p className="text-sm text-muted-foreground">
-        Lead not found. It may not exist or you may not have access.
+        It may have been removed, or it isn&apos;t assigned to you or your team.
       </p>
-      <Link href="/" className="text-sm text-blue-400 hover:underline">
+      <Link href="/inbox" className="text-sm text-blue-400 hover:underline">
         Back to inbox
       </Link>
     </div>

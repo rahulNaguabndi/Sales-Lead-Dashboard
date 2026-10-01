@@ -7,6 +7,7 @@ import { listScopeOwners } from '@/server/services/lead-query';
 import { DashboardView, type DashboardLayout } from '@/components/dashboard/DashboardView';
 
 export const dynamic = 'force-dynamic';
+export const metadata = { title: 'Dashboard' };
 
 export default async function DashboardPage() {
   const user = await getCurrentUser();

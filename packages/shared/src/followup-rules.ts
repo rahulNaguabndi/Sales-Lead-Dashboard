@@ -149,7 +149,7 @@ export const cadence = {
       dayOffset: step.day,
       done,
       label: done
-        ? `Cadence complete · ${total} of ${total} attempts`
+        ? `Cadence finished · all ${total} attempts made. Mark the follow-up done or move the lead on.`
         : `Attempt ${attempt} of ${total} · Suggested: ${CHANNEL_LABEL[channel]} today`,
     };
   },

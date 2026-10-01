@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { useQuery } from '@tanstack/react-query';
 import { Clock, Mail, MessageCircle, MessageSquare, Phone } from 'lucide-react';
-import type { Channel } from '@leaddesk/shared';
+import { priorityLabel, type Channel } from '@leaddesk/shared';
 import { fetchFollowUps } from './api';
 import { formatDueLabel } from './quick-picks';
 
@@ -19,10 +19,14 @@ const PRIORITY_DOT: Record<string, string> = {
   COOL: 'bg-sky-400',
 };
 
-/** Today's follow-ups, overdue first. Query key prefix ['follow-ups'] is invalidated on changes. */
-export function DueTodayWidget() {
+/**
+ * The signed-in user's own follow-ups for today, overdue first. Key prefix ['followups'] is
+ * invalidated by F12 events and local mutations. Leaders see team numbers in the stat chips, so
+ * the widget says plainly that it is personal.
+ */
+export function DueTodayWidget({ leader = false }: { leader?: boolean }) {
   const query = useQuery({
-    queryKey: ['follow-ups', 'today'],
+    queryKey: ['followups', 'today'],
     queryFn: () => fetchFollowUps('today'),
     refetchInterval: 60_000,
   });
@@ -35,10 +39,13 @@ export function DueTodayWidget() {
       className="rounded-lg border border-border bg-card p-3"
     >
       <div className="mb-2 flex items-center justify-between">
-        <h3 className="text-sm font-semibold">Today&rsquo;s follow-ups</h3>
+        <h2 className="text-sm font-semibold">
+          {leader ? 'Your own follow-ups today' : 'Today’s follow-ups'}
+        </h2>
         {query.data && (
           <span className="text-xs text-muted-foreground" data-testid="due-today-counts">
-            Due today {query.data.counts.dueToday} · Overdue {query.data.counts.overdue}
+            {leader ? 'Yours: ' : ''}Due today {query.data.counts.dueToday} · Overdue{' '}
+            {query.data.counts.overdue}
           </span>
         )}
       </div>
@@ -52,7 +59,11 @@ export function DueTodayWidget() {
         </p>
       )}
       {query.data && query.data.items.length === 0 && (
-        <p className="text-sm text-muted-foreground">Nothing due today</p>
+        <p className="text-sm text-muted-foreground">
+          {leader
+            ? 'Nothing due on leads you own. Team follow-ups are counted in the chips above.'
+            : 'Nothing due today'}
+        </p>
       )}
       <ul className="space-y-1">
         {query.data?.items.map((i) => {
@@ -65,7 +76,8 @@ export function DueTodayWidget() {
                 className="flex items-center gap-2 rounded-md px-2 py-1.5 text-sm hover:bg-muted"
               >
                 <span
-                  aria-label={`Priority ${i.lead.priority}`}
+                  role="img"
+                  aria-label={`Priority ${priorityLabel(i.lead.priority)}`}
                   className={`h-2 w-2 rounded-full ${PRIORITY_DOT[i.lead.priority] ?? 'bg-slate-400'}`}
                 />
                 <span className="flex-1 truncate">{i.lead.name}</span>

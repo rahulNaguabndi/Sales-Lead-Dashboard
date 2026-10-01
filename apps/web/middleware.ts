@@ -1,6 +1,7 @@
 import { NextResponse, type NextRequest } from 'next/server';
 import { isPublicPath, SESSION_COOKIE } from '@/server/auth/constants';
 import { verifySession } from '@/server/auth/jwt';
+import { isForbiddenPage } from '@/server/policy/route-access';
 
 const MUTATING = new Set(['POST', 'PATCH', 'PUT', 'DELETE']);
 
@@ -30,7 +31,17 @@ export async function middleware(req: NextRequest) {
   if (isPublicPath(pathname)) return NextResponse.next();
 
   const token = req.cookies.get(SESSION_COOKIE)?.value;
-  if (await verifySession(token)) return NextResponse.next();
+  const claims = await verifySession(token);
+  if (claims) {
+    // One access-denied pattern for every leader-only page: a real 403 with an explanation.
+    if (!isApi && isForbiddenPage(pathname, claims.role)) {
+      const url = req.nextUrl.clone();
+      url.pathname = '/forbidden';
+      url.search = '';
+      return NextResponse.rewrite(url, { status: 403 });
+    }
+    return NextResponse.next();
+  }
 
   if (isApi) {
     const res = errorJson(401, 'UNAUTHENTICATED', 'Authentication required');

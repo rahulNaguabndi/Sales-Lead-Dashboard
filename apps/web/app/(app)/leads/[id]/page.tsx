@@ -11,12 +11,12 @@ type Props = { params: { id: string } };
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const user = await getCurrentUser();
-  if (!user) return { title: 'Lead Desk' };
+  if (!user) return { title: 'Lead' };
   try {
     const { lead, customer } = await getLeadDetail(user, params.id);
-    return { title: `${customer.firstName} ${customer.lastName} · ${lead.reference} · Lead Desk` };
+    return { title: `${customer.firstName} ${customer.lastName} · ${lead.reference}` };
   } catch {
-    return { title: 'Lead not found · Lead Desk' };
+    return { title: 'Lead not found' };
   }
 }
 

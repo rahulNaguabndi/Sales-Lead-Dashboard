@@ -10,11 +10,18 @@ export function LeadHeaderAssign({ lead, customer, permissions }: LeadSlotProps)
   if (!(pool && permissions.canClaim) && !permissions.canAssign) return null;
   return (
     <div className="flex items-center gap-2">
-      {pool && permissions.canClaim && <ClaimButton leadId={lead.id} size="sm" />}
+      {pool && permissions.canClaim && (
+        <ClaimButton
+          leadId={lead.id}
+          customerName={`${customer.firstName} ${customer.lastName}`}
+          size="sm"
+        />
+      )}
       {permissions.canAssign && (
         <AssignCombobox
           teamId={lead.teamId}
           leadId={lead.id}
+          currentOwnerId={lead.ownerId}
           version={lead.version}
           customerLanguage={customer.language}
         />

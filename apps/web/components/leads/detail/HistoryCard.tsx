@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { formatDateTime, formatEUR } from '@/lib/format';
+import { stageLabel, vehicleName } from '@leaddesk/shared';
+import { formatDate, formatEUR } from '@/lib/format';
 import type { LeadDetail } from './types';
 
 export function HistoryCard({ history }: { history: LeadDetail['history'] }) {
@@ -25,7 +26,7 @@ export function HistoryCard({ history }: { history: LeadDetail['history'] }) {
                   <span>{p.reference}</span>
                 )}
                 <span className="text-muted-foreground">
-                  {p.vehicleModel ?? '—'} · {p.stage.toLowerCase()} · {formatDateTime(p.createdAt)}
+                  {vehicleName(p.vehicleModel)} · {stageLabel(p.stage)} · {formatDate(p.createdAt)}
                 </span>
               </li>
             ))}
@@ -37,9 +38,9 @@ export function HistoryCard({ history }: { history: LeadDetail['history'] }) {
             <ul className="space-y-1">
               {purchases.map((p, i) => (
                 <li key={i} className="flex justify-between gap-2">
-                  <span>{p.vehicleModel}</span>
+                  <span>{vehicleName(p.vehicleModel)}</span>
                   <span className="text-muted-foreground">
-                    {formatEUR(p.amount)} · {formatDateTime(p.purchasedAt)}
+                    {formatEUR(p.amount)} · {formatDate(p.purchasedAt)}
                   </span>
                 </li>
               ))}

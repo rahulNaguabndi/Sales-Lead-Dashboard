@@ -4,12 +4,14 @@ import {
   createContext,
   useCallback,
   useContext,
+  useEffect,
   useMemo,
   useRef,
   useState,
   type ReactNode,
   type RefObject,
 } from 'react';
+import type { UserActivityType } from '@leaddesk/shared';
 import {
   EMPTY_FIELDS,
   applyPrefill,
@@ -32,9 +34,55 @@ export type ComposerApi = {
 
 const ComposerContext = createContext<ComposerApi | null>(null);
 
-export function ComposerProvider({ children }: { children: ReactNode }) {
-  const [fields, setFieldsState] = useState<ComposerFields>(EMPTY_FIELDS);
+const draftStorageKey = (id: string) => `leaddesk:composer-draft:${id}`;
+
+function readDraft(id: string | undefined): ComposerFields | null {
+  if (!id || typeof window === 'undefined') return null;
+  try {
+    const raw = window.sessionStorage.getItem(draftStorageKey(id));
+    const d = raw ? (JSON.parse(raw) as Partial<ComposerFields>) : null;
+    return d && typeof d.note === 'string' ? { ...EMPTY_FIELDS, ...d } : null;
+  } catch {
+    return null;
+  }
+}
+
+export function ComposerProvider({
+  children,
+  defaultType,
+  draftId,
+}: {
+  children: ReactNode;
+  /** Initial activity type, e.g. the customer's preferred channel. */
+  defaultType?: UserActivityType;
+  /** When set (the lead id), an unsent note survives navigation and reloads in this tab. */
+  draftId?: string;
+}) {
+  const initialFields = { ...EMPTY_FIELDS, ...(defaultType ? { type: defaultType } : {}) };
+  const [fields, setFieldsState] = useState<ComposerFields>(initialFields);
   const [expanded, setExpanded] = useState(false);
+
+  // Restore after mount (sessionStorage is client-only, so the server render stays identical).
+  useEffect(() => {
+    const draft = readDraft(draftId);
+    if (draft && draft.note.trim()) {
+      setFieldsState(draft);
+      setExpanded(true);
+    }
+  }, [draftId]);
+
+  useEffect(() => {
+    if (!draftId) return;
+    try {
+      if (fields.note.trim()) {
+        window.sessionStorage.setItem(draftStorageKey(draftId), JSON.stringify(fields));
+      } else {
+        window.sessionStorage.removeItem(draftStorageKey(draftId));
+      }
+    } catch {
+      // Storage can be unavailable (private mode); drafts are a convenience only.
+    }
+  }, [draftId, fields]);
   const noteRef = useRef<HTMLTextAreaElement>(null);
   const outcomeRef = useRef<HTMLSelectElement>(null);
   const pendingFocus = useRef<'note' | 'outcome' | null>(null);

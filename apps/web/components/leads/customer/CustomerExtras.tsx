@@ -1,6 +1,7 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useQuery } from '@tanstack/react-query';
+import { toast } from 'sonner';
 import { Copy, Repeat } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -8,31 +9,26 @@ import { apiFetch } from '@/lib/api-client';
 import type { LeadSlotProps } from '@/components/leads/detail/types';
 import { EditPreferencesDialog } from './EditPreferencesDialog';
 
-type State =
-  { status: 'loading' } | { status: 'error' } | { status: 'ready'; marketingConsent: boolean };
-
 /** Slot `customerExtras`: extra customer facts and preference editing under F05's card. */
 export function CustomerExtras({ lead, customer }: LeadSlotProps) {
-  const [state, setState] = useState<State>({ status: 'loading' });
+  // TanStack Query dedupes this fetch (it used to run twice per page load from an effect).
+  const consent = useQuery({
+    queryKey: ['customer', customer.id, 'consent', lead.id],
+    queryFn: async () => {
+      const res = await apiFetch(`/api/customers/${customer.id}?leadId=${lead.id}`);
+      if (!res.ok) throw new Error(String(res.status));
+      const body = (await res.json()) as { customer: { marketingConsent: boolean } };
+      return body.customer.marketingConsent;
+    },
+    staleTime: 60_000,
+  });
 
-  useEffect(() => {
-    let cancelled = false;
-    setState({ status: 'loading' });
-    apiFetch(`/api/customers/${customer.id}?leadId=${lead.id}`)
-      .then(async (res) => {
-        if (!res.ok) throw new Error(String(res.status));
-        const body = (await res.json()) as { customer: { marketingConsent: boolean } };
-        if (!cancelled) {
-          setState({ status: 'ready', marketingConsent: body.customer.marketingConsent });
-        }
-      })
-      .catch(() => {
-        if (!cancelled) setState({ status: 'error' });
-      });
-    return () => {
-      cancelled = true;
-    };
-  }, [customer.id, lead.id, customer.preferredChannel, customer.secondaryChannel]);
+  const copy = (value: string, done: string) => {
+    void navigator.clipboard
+      ?.writeText(value)
+      .then(() => toast.success(done))
+      .catch(() => toast.error('Could not copy to the clipboard'));
+  };
 
   return (
     <div className="space-y-2 border-t border-border pt-3">
@@ -43,10 +39,10 @@ export function CustomerExtras({ lead, customer }: LeadSlotProps) {
             Returning customer
           </Badge>
         )}
-        {state.status === 'ready' && !state.marketingConsent && (
+        {consent.isSuccess && !consent.data && (
           <Badge variant="outline">No marketing consent</Badge>
         )}
-        {state.status === 'error' && (
+        {consent.isError && (
           <span className="text-xs text-muted-foreground" role="status">
             Consent status unavailable
           </span>
@@ -58,7 +54,8 @@ export function CustomerExtras({ lead, customer }: LeadSlotProps) {
             type="button"
             variant="ghost"
             size="sm"
-            onClick={() => void navigator.clipboard?.writeText(customer.phone!)}
+            aria-label={`Copy phone number ${customer.phone}`}
+            onClick={() => copy(customer.phone!, 'Phone number copied')}
           >
             <Copy aria-hidden />
             Copy phone
@@ -69,7 +66,8 @@ export function CustomerExtras({ lead, customer }: LeadSlotProps) {
             type="button"
             variant="ghost"
             size="sm"
-            onClick={() => void navigator.clipboard?.writeText(customer.email!)}
+            aria-label={`Copy email ${customer.email}`}
+            onClick={() => copy(customer.email!, 'Email copied')}
           >
             <Copy aria-hidden />
             Copy email

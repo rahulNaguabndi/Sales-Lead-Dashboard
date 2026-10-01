@@ -2,7 +2,7 @@ import { expect, test } from '@playwright/test';
 import path from 'node:path';
 import Database from 'better-sqlite3';
 import { ulid } from 'ulid';
-import { signIn } from './helpers';
+import { signIn, preferTableView } from './helpers';
 
 // Core loop (R1 -> R2 -> R3). F04 owns the inbox steps; F05/F06 append the detail and logging steps.
 
@@ -21,6 +21,8 @@ test('core loop: Sofia lands in the inbox and opens her most urgent lead', async
 });
 
 import type { APIRequestContext } from '@playwright/test';
+
+test.beforeEach(async ({ page }) => preferTableView(page));
 
 // Core loop (R1-R3): sign in as Sofia, open one of her leads, log a call, see it persist.
 // The lead list/detail pages belong to F04/F05; until they merge, the UI assertions skip and the

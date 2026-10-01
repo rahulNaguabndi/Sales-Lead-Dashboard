@@ -6,7 +6,7 @@ import { KanbanBoard } from '@/components/leads/stage/KanbanBoard';
 
 export const dynamic = 'force-dynamic';
 
-export const metadata = { title: 'Pipeline · Lead Desk' };
+export const metadata = { title: 'Pipeline' };
 
 export default async function PipelinePage() {
   const user = await getCurrentUser();

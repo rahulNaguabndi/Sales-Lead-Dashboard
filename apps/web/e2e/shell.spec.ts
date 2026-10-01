@@ -18,7 +18,8 @@ test('app shell shows the role-aware navigation rail and top bar', async ({ page
   const box = await nav.boundingBox();
   expect(Math.round(box?.width ?? 0)).toBe(56);
   await expect(page.getByPlaceholder('Search leads (⌘K)')).toBeVisible();
-  await expect(page.getByText(/\d+ leads loaded/)).toBeVisible();
+  // VP home is the dashboard; the shell renders the page's own h1 (no empty top-bar heading).
+  await expect(page.getByRole('heading', { level: 1, name: 'Dashboard' })).toBeVisible();
 });
 
 test('activities route is live (F05): unknown lead ids return 404', async ({ request }) => {
@@ -27,4 +28,3 @@ test('activities route is live (F05): unknown lead ids return 404', async ({ req
   expect(res.status()).toBe(404);
   expect((await res.json()).error.code).toBe('NOT_FOUND');
 });
-

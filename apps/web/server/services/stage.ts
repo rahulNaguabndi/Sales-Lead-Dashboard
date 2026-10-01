@@ -215,7 +215,11 @@ function apply(
   }
 
   const rows: ActivityRow[] = [];
-  const addSystem = (type: ActivityRow['type'], note: string, metadata: Record<string, unknown>) => {
+  const addSystem = (
+    type: ActivityRow['type'],
+    note: string,
+    metadata: Record<string, unknown>,
+  ) => {
     const row: ActivityRow = {
       id: newId(),
       leadId,
@@ -483,7 +487,8 @@ export async function listPipeline(
         ownerColor: r.ownerColor,
         budgetMax: r.budgetMax,
         dealValue: r.dealValue,
-        daysInStage: Math.max(0, Math.floor((now - (since.get(r.id) ?? r.updatedAt)) / 86_400_000)),
+        // Rounded like the timeline's relative times, so "8 days ago" and "8d in stage" agree.
+        daysInStage: Math.max(0, Math.round((now - (since.get(r.id) ?? r.updatedAt)) / 86_400_000)),
       })),
     });
   }

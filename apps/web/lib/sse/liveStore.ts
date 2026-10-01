@@ -1,4 +1,5 @@
-export type LiveStatus = 'live' | 'reconnecting' | 'offline';
+/** `connecting` is the first attempt after a page load; only a lost connection is `reconnecting`. */
+export type LiveStatus = 'connecting' | 'live' | 'reconnecting' | 'offline';
 
 export const HIGHLIGHT_TTL_MS = 5000;
 export const OFFLINE_POLL_AFTER_MS = 60_000;
@@ -14,8 +15,8 @@ export type LiveState = {
 /** Minimal external store (useSyncExternalStore-compatible) holding client-side live state. */
 export function createLiveStore(now: () => number = Date.now) {
   let state: LiveState = {
-    status: 'reconnecting',
-    offlineSince: null,
+    status: 'connecting',
+    offlineSince: now(),
     highlighted: new Map(),
     lastUpdatedBy: new Map(),
     version: 0,
@@ -36,10 +37,10 @@ export function createLiveStore(now: () => number = Date.now) {
       if (status === state.status) return;
       set({ status, offlineSince: status === 'live' ? null : (state.offlineSince ?? now()) });
     },
-    /** Reconnecting for more than 60 s counts as offline. */
+    /** Connecting or reconnecting for more than 60 s counts as offline. */
     tick() {
       if (
-        state.status === 'reconnecting' &&
+        (state.status === 'reconnecting' || state.status === 'connecting') &&
         state.offlineSince !== null &&
         now() - state.offlineSince > OFFLINE_POLL_AFTER_MS
       )

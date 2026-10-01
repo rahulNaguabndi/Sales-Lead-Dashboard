@@ -29,7 +29,7 @@ import {
   patchOfferRequest,
   type OfferDTO,
 } from './offers-api';
-import { toDateInput } from './offer-format';
+import { isLongValidity, toDateInput } from './offer-format';
 
 const TYPE_LABEL: Record<DiscountType, string> = {
   AMOUNT: 'Amount off (€)',
@@ -88,6 +88,23 @@ function initial(offer?: OfferDTO): FormState {
   };
 }
 
+const FIELD_ORDER = [
+  'title',
+  'description',
+  'value',
+  'validFrom',
+  'validTo',
+  'eligibility',
+] as const;
+const FIELD_IDS: Record<(typeof FIELD_ORDER)[number], string> = {
+  title: 'offer-title',
+  description: 'offer-desc',
+  value: 'offer-value',
+  validFrom: 'offer-from',
+  validTo: 'offer-to',
+  eligibility: 'offer-eligibility',
+};
+
 export function OfferForm({
   open,
   onOpenChange,
@@ -113,6 +130,17 @@ export function OfferForm({
 
   const set = (patch: Partial<FormState>) => setState((s) => ({ ...s, ...patch }));
 
+  // The dialog body scrolls, so an error above the fold is invisible: bring the first one into view.
+  const focusFirstError = (fields: Record<string, string>) => {
+    const first = FIELD_ORDER.find((k) => fields[k]);
+    if (!first) return;
+    requestAnimationFrame(() => {
+      const el = document.getElementById(FIELD_IDS[first]);
+      el?.scrollIntoView({ block: 'center', behavior: 'smooth' });
+      el?.focus({ preventScroll: true });
+    });
+  };
+
   async function submit(e: React.FormEvent) {
     e.preventDefault();
     setFormError(null);
@@ -132,6 +160,7 @@ export function OfferForm({
       for (const issue of parsed.error.issues)
         fields[String(issue.path[0] ?? '_')] ??= issue.message;
       setErrors(fields);
+      focusFirstError(fields);
       return;
     }
     setErrors({});
@@ -146,7 +175,10 @@ export function OfferForm({
       toast.success(offer ? 'Offer updated' : 'Offer created');
       onOpenChange(false);
     } catch (err) {
-      if (err instanceof ApiRequestError && err.fields) setErrors(err.fields);
+      if (err instanceof ApiRequestError && err.fields) {
+        setErrors(err.fields);
+        focusFirstError(err.fields);
+      }
       setFormError(err instanceof Error ? err.message : 'Could not save the offer');
     } finally {
       setSaving(false);
@@ -176,6 +208,7 @@ export function OfferForm({
             </label>
             <Input
               id="offer-title"
+              aria-invalid={!!errors.title}
               value={state.title}
               onChange={(e) => set({ title: e.target.value })}
             />
@@ -252,6 +285,13 @@ export function OfferForm({
               {err('validTo')}
             </div>
           </div>
+          {state.validFrom &&
+            state.validTo &&
+            isLongValidity(Date.parse(state.validFrom), Date.parse(state.validTo)) && (
+              <p className="text-xs text-amber-400" data-testid="offer-long-validity">
+                This offer runs for more than a year. Double-check the end date.
+              </p>
+            )}
           <EligibilityBuilder
             value={state.eligibility}
             onChange={(eligibility) => set({ eligibility })}

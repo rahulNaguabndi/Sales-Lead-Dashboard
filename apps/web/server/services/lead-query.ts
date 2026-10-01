@@ -28,6 +28,7 @@ const AT_RISK_AFTER_MS = 2 * DAY;
 export type LeadListItem = {
   id: string;
   reference: string;
+  teamId: string | null;
   customer: {
     id: string;
     name: string;
@@ -35,6 +36,8 @@ export type LeadListItem = {
     country: string;
     isReturning: boolean;
     preferredChannel: Channel;
+    /** Open leads this customer has in total (> 1 means duplicates to coordinate). */
+    openLeads: number;
   };
   vehicleModel: string | null;
   source: LeadSource;
@@ -74,6 +77,9 @@ export type QueryDeps = { db?: Db; now?: number };
 // the lead_id scan is small per lead) and keeps the main query a single pass.
 const NEXT_FU = sql.raw(
   `(SELECT MIN(f.due_at) FROM follow_ups f WHERE f.lead_id = leads.id AND f.status = 'PENDING')`,
+);
+const CUSTOMER_OPEN = sql.raw(
+  `(SELECT COUNT(*) FROM leads l2 WHERE l2.customer_id = leads.customer_id AND l2.stage IN ('NEW','CONTACTED','QUALIFIED','TEST_DRIVE','NEGOTIATION'))`,
 );
 const HAS_CONTACT = sql.raw(
   `EXISTS (SELECT 1 FROM activities a WHERE a.lead_id = leads.id AND a.kind = 'USER' AND a.type <> 'NOTE')`,
@@ -116,13 +122,8 @@ function buildWhere(
   p: NormalizedParams,
   now: number,
 ): SQL {
-  // For the 'team' view, non-leaders see all leads in their team (not just their own).
-  const baseScope =
-    p.view === 'team' && !caps.leader && scope.teamIds.size > 0
-      ? sql`leads.team_id IN (${list([...scope.teamIds])})`
-      : leadScopeWhere(scope);
-
-  const where: SQL[] = [baseScope];
+  // F03 US-1: the list must never widen the policy scope, or list and detail disagree.
+  const where: SQL[] = [leadScopeWhere(scope)];
 
   switch (p.view) {
     case 'mine':
@@ -208,6 +209,7 @@ const FROM = sql`FROM leads JOIN customers c ON c.id = leads.customer_id LEFT JO
 type Row = {
   id: string;
   reference: string;
+  team_id: string | null;
   customer_id: string;
   first_name: string;
   last_name: string;
@@ -228,6 +230,7 @@ type Row = {
   last_contact_at: number | null;
   next_follow_up_at: number | null;
   has_contact: number;
+  customer_open: number;
 };
 
 type ActivityRow = {
@@ -291,11 +294,12 @@ export async function listLeads(
   const page = Math.min(p.page, pages);
 
   const rows = database.all<Row>(sql`
-    SELECT leads.id, leads.reference, leads.customer_id, c.first_name, c.last_name, c.city, c.country,
+    SELECT leads.id, leads.reference, leads.team_id, leads.customer_id, c.first_name, c.last_name, c.city, c.country,
       c.is_returning, c.preferred_channel, leads.vehicle_model, leads.source, leads.stage,
       leads.priority, leads.score, leads.owner_id, u.name AS owner_name, u.avatar_color AS owner_color,
       leads.created_at, leads.last_activity_at, leads.last_contact_at,
-      ${NEXT_FU} AS next_follow_up_at, ${HAS_CONTACT} AS has_contact
+      ${NEXT_FU} AS next_follow_up_at, ${HAS_CONTACT} AS has_contact,
+      ${CUSTOMER_OPEN} AS customer_open
     ${FROM}
     WHERE ${where}
     ORDER BY ${buildOrderBy(p, now)}
@@ -321,6 +325,7 @@ export async function listLeads(
     return {
       id: r.id,
       reference: r.reference,
+      teamId: r.team_id,
       customer: {
         id: r.customer_id,
         name: `${r.first_name} ${r.last_name}`,
@@ -328,6 +333,7 @@ export async function listLeads(
         country: r.country,
         isReturning: r.is_returning === 1,
         preferredChannel: r.preferred_channel,
+        openLeads: r.customer_open,
       },
       vehicleModel: r.vehicle_model,
       source: r.source,

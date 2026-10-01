@@ -1,21 +1,18 @@
-import { formatEUR, type OfferEligibilityRules } from '@leaddesk/shared';
+import {
+  formatDate,
+  formatEUR,
+  sourceLabel,
+  vehicleName,
+  type OfferEligibilityRules,
+} from '@leaddesk/shared';
 import type { OfferDTO } from '@/server/services/offer-matcher';
 
-const until = new Intl.DateTimeFormat('en-GB', {
-  day: 'numeric',
-  month: 'short',
-  timeZone: 'Europe/Brussels',
-});
-const full = new Intl.DateTimeFormat('en-GB', {
-  day: 'numeric',
-  month: 'short',
-  year: 'numeric',
-  timeZone: 'Europe/Brussels',
-});
+const BRUSSELS = 'Europe/Brussels';
 
 /** "31 Dec" (valid_to is end of day Brussels, so format in that zone). */
-export const formatUntil = (ms: number): string => until.format(new Date(ms));
-export const formatDay = (ms: number): string => full.format(new Date(ms));
+export const formatUntil = (ms: number): string =>
+  formatDate(ms, { year: false, timeZone: BRUSSELS });
+export const formatDay = (ms: number): string => formatDate(ms, { timeZone: BRUSSELS });
 
 /** YYYY-MM-DD in Brussels for a date input. */
 export function toDateInput(ms: number): string {
@@ -47,11 +44,17 @@ export function summarizeEligibility(rules: OfferEligibilityRules): string {
   const parts: string[] = [];
   if (rules.customerType === 'RETURNING') parts.push('Returning customers');
   if (rules.customerType === 'NEW') parts.push('New customers');
-  if (rules.models?.length) parts.push(`Models: ${rules.models.join(', ')}`);
+  if (rules.models?.length) parts.push(`Models: ${rules.models.map(vehicleName).join(', ')}`);
   if (rules.countries?.length) parts.push(`Countries: ${rules.countries.join(', ')}`);
   if (rules.requiresTradeIn) parts.push('With trade-in');
   if (rules.requiresFinance) parts.push('With finance');
   if (rules.minBudget) parts.push(`Budget from ${formatEUR(rules.minBudget)}`);
-  if (rules.sources?.length) parts.push(`Sources: ${rules.sources.join(', ')}`);
+  if (rules.sources?.length) parts.push(`Sources: ${rules.sources.map(sourceLabel).join(', ')}`);
   return parts.length ? parts.join(' · ') : 'All leads';
 }
+
+const YEAR_MS = 365 * 24 * 60 * 60 * 1000;
+
+/** Validity windows over a year are unusual for a promotion and usually a typo in the end date. */
+export const isLongValidity = (validFrom: number, validTo: number): boolean =>
+  validTo - validFrom > YEAR_MS;

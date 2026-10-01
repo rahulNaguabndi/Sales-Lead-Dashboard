@@ -13,7 +13,9 @@ import {
   type LucideIcon,
 } from 'lucide-react';
 import type { ActivityItem } from '@/components/leads/detail/types';
+import { activityTypeLabel, outcomeLabel } from '@leaddesk/shared';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
+import { initials } from '@/lib/utils';
 import { RelativeTime } from './RelativeTime';
 
 const TYPE_META: Record<string, { label: string; Icon: LucideIcon }> = {
@@ -25,8 +27,6 @@ const TYPE_META: Record<string, { label: string; Icon: LucideIcon }> = {
   TEST_DRIVE: { label: 'Test drive', Icon: Car },
   NOTE: { label: 'Note', Icon: StickyNote },
 };
-
-const titleCase = (s: string) => s.charAt(0) + s.slice(1).toLowerCase().replace(/_/g, ' ');
 
 export function CollapsibleText({ text }: { text: string }) {
   const [open, setOpen] = useState(false);
@@ -53,7 +53,7 @@ export function CollapsibleText({ text }: { text: string }) {
 }
 
 export function TimelineEntry({ item }: { item: ActivityItem }) {
-  const meta = TYPE_META[item.type] ?? { label: titleCase(item.type), Icon: StickyNote };
+  const meta = TYPE_META[item.type] ?? { label: activityTypeLabel(item.type), Icon: StickyNote };
   const actorName = item.actor ? item.actor.name : 'System';
   return (
     <li className="flex gap-3 rounded-md border border-border bg-card p-3">
@@ -63,7 +63,7 @@ export function TimelineEntry({ item }: { item: ActivityItem }) {
           <span className="font-medium">{meta.label}</span>
           {item.outcome && (
             <span className="rounded-full bg-muted px-2 py-0.5 text-xs">
-              {titleCase(item.outcome)}
+              {outcomeLabel(item.outcome)}
             </span>
           )}
           {item.aiAssisted && (
@@ -77,7 +77,7 @@ export function TimelineEntry({ item }: { item: ActivityItem }) {
         {item.note && <CollapsibleText text={item.note} />}
         <div className="flex items-center gap-2 text-xs text-muted-foreground">
           <Avatar className="h-5 w-5">
-            <AvatarFallback className="text-[10px]">{actorName.slice(0, 1)}</AvatarFallback>
+            <AvatarFallback className="text-[9px]">{initials(actorName)}</AvatarFallback>
           </Avatar>
           <span>
             {actorName}

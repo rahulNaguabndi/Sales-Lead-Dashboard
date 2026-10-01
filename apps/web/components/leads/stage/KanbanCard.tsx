@@ -3,18 +3,10 @@
 import Link from 'next/link';
 import { useDraggable } from '@dnd-kit/core';
 import type { PipelineCard } from '@/server/services/stage';
+import { priorityLabel, vehicleName } from '@leaddesk/shared';
 import { PriorityDot } from '@/components/leads/inbox/PriorityDot';
+import { UserAvatar } from '@/components/ui/user-avatar';
 import { cn } from '@/lib/utils';
-
-const initials = (name: string | null) =>
-  name
-    ? name
-        .split(/\s+/)
-        .map((p) => p[0])
-        .slice(0, 2)
-        .join('')
-        .toUpperCase()
-    : '–';
 
 export function CardBody({ card }: { card: PipelineCard }) {
   return (
@@ -27,19 +19,18 @@ export function CardBody({ card }: { card: PipelineCard }) {
         >
           {card.customerName}
         </Link>
-        <span
-          title={card.ownerName ?? 'Unassigned'}
-          className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-[10px] font-semibold text-white"
-          style={{ backgroundColor: card.ownerColor ?? '#64748b' }}
-        >
-          {initials(card.ownerName)}
-          <span className="sr-only">{card.ownerName ?? 'Unassigned'}</span>
-        </span>
+        {card.ownerName ? (
+          <UserAvatar name={card.ownerName} color={card.ownerColor ?? '#64748b'} />
+        ) : (
+          <span className="text-xs text-muted-foreground">Unassigned</span>
+        )}
       </div>
-      <div className="mt-1 text-xs text-muted-foreground">{card.vehicleModel ?? 'No model'}</div>
+      <div className="mt-1 text-xs text-muted-foreground">{vehicleName(card.vehicleModel)}</div>
       <div className="mt-2 flex items-center gap-2 text-xs text-muted-foreground">
-        <PriorityDot priority={card.priority} score={card.score} />
-        <span>Score {card.score}</span>
+        <PriorityDot priority={card.priority} decorative />
+        <span>
+          {priorityLabel(card.priority)} · {card.score}
+        </span>
         <span className="ml-auto">{card.daysInStage}d in stage</span>
       </div>
     </>
@@ -70,7 +61,7 @@ export function KanbanCard({
       {...listeners}
       data-testid={`kanban-card-${card.id}`}
       data-stage={card.stage}
-      aria-label={`${card.customerName}, ${card.vehicleModel ?? 'no model'}. Press M to move.`}
+      aria-label={`${card.customerName}, ${vehicleName(card.vehicleModel)}. Press M to move.`}
       onKeyDown={(e) => {
         if ((e.key === 'm' || e.key === 'M') && e.target === e.currentTarget) {
           e.preventDefault();

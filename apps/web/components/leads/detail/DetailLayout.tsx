@@ -42,7 +42,7 @@ export function DetailLayout({
   const show = (id: Tab) => `${tab === id ? 'block' : 'hidden'} space-y-4 lg:block`;
 
   return (
-    <ComposerProvider>
+    <ComposerProvider defaultType={customer.preferredChannel} draftId={lead.id}>
       <div className="space-y-4 p-4 lg:p-6">
         <LeadHeader detail={detail} actions={slot('headerActions')} />
         {slot('liveNote')}

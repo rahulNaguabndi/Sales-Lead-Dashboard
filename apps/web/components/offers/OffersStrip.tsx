@@ -10,13 +10,13 @@ import { formatUntil } from './offer-format';
 
 /** Top-bar strip: count of active offers with a popover list. Hidden state is never "0 error". */
 export function OffersStrip() {
-  // offer.changed invalidates ['offers'] (F12 live provider); otherwise refetch every 30 s and on focus.
+  // offer.changed invalidates ['offers'] (F12 live provider), so a long staleTime is safe and stops
+  // the header refetching on every navigation; the interval is only a fallback.
   const query = useQuery({
     queryKey: offersKey('active'),
     queryFn: () => fetchOffers('active'),
-    refetchInterval: 30_000,
-    refetchOnWindowFocus: true,
-    staleTime: 10_000,
+    refetchInterval: 120_000,
+    staleTime: 60_000,
   });
   const offers = query.data ?? [];
 
@@ -30,8 +30,16 @@ export function OffersStrip() {
           className="flex h-8 items-center gap-1.5 rounded-md px-2 text-sm text-slate-200 hover:bg-slate-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
         >
           <Flame className="h-4 w-4 text-orange-400" aria-hidden />
-          <span data-testid="offers-strip-count">{query.isSuccess ? offers.length : '-'}</span>
-          <span className="hidden text-xs text-slate-400 md:inline">offers</span>
+          {query.isSuccess ? (
+            <>
+              <span data-testid="offers-strip-count">{offers.length}</span>
+              <span className="hidden text-xs text-slate-400 md:inline">
+                {offers.length === 1 ? 'offer' : 'offers'}
+              </span>
+            </>
+          ) : (
+            <span aria-hidden className="h-3 w-8 animate-pulse rounded bg-slate-800" />
+          )}
         </button>
       </PopoverTrigger>
       <PopoverContent align="end" className="w-80 p-2">

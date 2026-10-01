@@ -16,7 +16,7 @@ describe('keysFor', () => {
   it('maps events to query keys', () => {
     expect(keysFor(created())).toEqual([['leads'], ['followups'], ['dashboard']]);
     const act = { type: 'activity.created', leadId: 'l9' } as LeadDeskEvent;
-    expect(keysFor(act)).toEqual([['lead', 'l9', 'activities']]);
+    expect(keysFor(act)).toEqual([['lead', 'l9', 'activities'], ['leads'], ['followups']]);
     expect(keysFor({ type: 'followup.due' } as LeadDeskEvent)).toEqual([['followups']]);
     expect(keysFor({ type: 'offer.changed' } as LeadDeskEvent)).toEqual([['offers'], ['lead']]);
     expect(keysFor({ type: 'lead.updated', leadId: 'x' } as LeadDeskEvent)[0]).toEqual([

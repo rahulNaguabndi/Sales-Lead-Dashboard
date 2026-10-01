@@ -97,17 +97,18 @@ export function offerStatus(
   return 'ACTIVE';
 }
 
-const nf = new Intl.NumberFormat('de-DE', { maximumFractionDigits: 2 });
+// Percentages match the dashboards ("12.5%"): English decimals, no space before the sign.
+const nf = new Intl.NumberFormat('en-GB', { maximumFractionDigits: 2 });
 
-/** "1.500 €", "5 %", "0,9 % APR" or the gift description. */
+/** "1.500 €", "5%", "0.9% APR" or the gift description. */
 export function formatOfferValue(
   o: Pick<MatchableOffer, 'discountType' | 'value' | 'description'>,
 ): string {
   if (o.discountType === 'GIFT') return o.description;
   if (o.value === null) return '';
   if (o.discountType === 'AMOUNT') return formatEUR(o.value);
-  if (o.discountType === 'PERCENT') return `${nf.format(o.value)}\u00a0%`;
-  return `${nf.format(o.value / 100)}\u00a0% APR`;
+  if (o.discountType === 'PERCENT') return `${nf.format(o.value)}%`;
+  return `${nf.format(o.value / 100)}% APR`;
 }
 
 function brusselsOffsetMs(instant: number): number {

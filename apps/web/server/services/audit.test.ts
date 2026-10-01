@@ -1,12 +1,6 @@
 import { beforeAll, describe, expect, it } from 'vitest';
 import { ulid } from 'ulid';
-import {
-  auditFiltersSchema,
-  decodeCursor,
-  encodeCursor,
-  queryAudit,
-  summarize,
-} from './audit';
+import { auditFiltersSchema, decodeCursor, encodeCursor, queryAudit, summarize } from './audit';
 import { EMAIL, setupActivityEnv, type Ctx } from '../../tests/integration/activity-helpers';
 import { resolveScope } from '../policy';
 
@@ -51,11 +45,18 @@ describe('summarize', () => {
     expect(s).toBe('Owner: Anna → Jonas (manual)');
   });
   it('stage change, created and unknown fallback', () => {
-    expect(summarize({ action: 'lead.stage', before: { stage: 'NEW' }, after: { stage: 'CONTACTED' } })).toBe(
-      'Stage: NEW → CONTACTED',
-    );
+    expect(
+      summarize({ action: 'lead.stage', before: { stage: 'NEW' }, after: { stage: 'CONTACTED' } }),
+    ).toBe('Stage: New → Contacted');
     expect(summarize({ action: 'lead.intake', before: null, after: {} })).toBe('Lead created');
-    expect(summarize({ action: 'weird.thing', before: null, after: null })).toBe('weird.thing');
+    expect(summarize({ action: 'weird.thing', before: null, after: null })).toBe('Weird thing');
+    expect(
+      summarize({
+        action: 'lead.auto_cold',
+        before: { stage: 'CONTACTED' },
+        after: { stage: 'COLD' },
+      }),
+    ).toBe('Stage: Contacted → Cold (no response)');
   });
 });
 
@@ -108,16 +109,23 @@ beforeAll(async () => {
     after: { stage: 'CONTACTED' },
   });
   ids.offer = insert(c.userId(EMAIL.isabelle), 'offer.create', 'offer', 'offer-x', base + 3);
-  insert(null, 'auth.login_failed', 'auth', 'x', base + 4, { meta: { emailHash: 'abc', actorType: 'SYSTEM' } });
+  insert(null, 'auth.login_failed', 'auth', 'x', base + 4, {
+    meta: { emailHash: 'abc', actorType: 'SYSTEM' },
+  });
   // equal created_at entries for keyset check
-  for (let i = 0; i < 5; i++) insert(c.userId(EMAIL.lukas), 'lead.score', 'lead', ids.dach!, base + 50);
+  for (let i = 0; i < 5; i++)
+    insert(c.userId(EMAIL.lukas), 'lead.score', 'lead', ids.dach!, base + 50);
 });
 
 const scopeOf = (email: string) => resolveScope(c.userId(email));
 
 describe('queryAudit', () => {
   it('lead trail with actor names and owner diff resolved', async () => {
-    const r = queryAudit(await scopeOf(EMAIL.isabelle), { entity: 'lead', entityId: ids.dach, action: 'lead.assign' });
+    const r = queryAudit(await scopeOf(EMAIL.isabelle), {
+      entity: 'lead',
+      entityId: ids.dach,
+      action: 'lead.assign',
+    });
     expect(r.items).toHaveLength(1);
     const it = r.items[0]!;
     expect(it.actor).toMatchObject({ name: 'Lukas Becker' });
@@ -164,7 +172,12 @@ describe('queryAudit', () => {
     expect(lukas.some((i) => i.entity === 'offer')).toBe(false);
     expect(lukas.some((i) => i.entityId === ids.dach)).toBe(true);
     const marco = queryAudit(await scopeOf(EMAIL.marco), { limit: 100 }).items;
-    expect(marco.some((i) => i.entityId === ids.dach && i.actor && 'id' in i.actor && i.actor.name === 'Anna Weber')).toBe(false);
+    expect(
+      marco.some(
+        (i) =>
+          i.entityId === ids.dach && i.actor && 'id' in i.actor && i.actor.name === 'Anna Weber',
+      ),
+    ).toBe(false);
     const vp = queryAudit(await scopeOf(EMAIL.isabelle), { limit: 100 }).items;
     expect(vp.some((i) => i.entity === 'offer')).toBe(true);
   });
@@ -177,5 +190,11 @@ describe('queryAudit', () => {
 });
 
 function resolveScopeSync() {
-  return { userId: 'x', role: 'REP' as const, userIds: new Set<string>(), teamIds: new Set<string>(), isOrgWide: false };
+  return {
+    userId: 'x',
+    role: 'REP' as const,
+    userIds: new Set<string>(),
+    teamIds: new Set<string>(),
+    isOrgWide: false,
+  };
 }

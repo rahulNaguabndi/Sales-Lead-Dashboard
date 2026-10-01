@@ -1,15 +1,12 @@
 'use client';
 
 import { getSharedQueryClient } from '@/lib/sse/queryClient';
-import { useState } from 'react';
-import {
-  QueryClientProvider,
-  keepPreviousData,
-  useQuery,
-} from '@tanstack/react-query';
+import { Suspense, useEffect, useState } from 'react';
+import { QueryClientProvider, keepPreviousData, useQuery } from '@tanstack/react-query';
 import type { LeadListResult } from '@/server/services/lead-query';
-import { apiFetch } from '@/lib/api-client';
 import { Button } from '@/components/ui/button';
+import { BulkActionBar } from '@/components/leads/assign/BulkActionBar';
+import { fetchLeads } from './inbox-api';
 import type { EmptyKind } from './EmptyState';
 import { activeFilterKeys, toQueryString } from './inbox-params';
 import { InboxFilters } from './InboxFilters';
@@ -20,6 +17,7 @@ import { InboxTabs, type TabCaps } from './InboxTabs';
 import { DueTodayWidget } from '@/components/followups/due-today-widget';
 import { StatChips, type StatChipKey } from './StatChips';
 import { useInboxParams } from './useInboxParams';
+import { ScoringInfoModal } from './ScoringInfoModal';
 
 const SORTS: [string, string][] = [
   ['rank', 'Recommended'],
@@ -35,30 +33,54 @@ type Props = {
   initialData: LeadListResult;
   initialKey: string;
   owners: { id: string; name: string }[];
+  teams?: { id: string; name: string }[];
 };
 
-function Inbox({ caps, initialData, initialKey, owners }: Props) {
+type ViewMode = 'table' | 'board';
+const VIEW_MODE_KEY = 'leaddesk:inbox-view';
+
+/** View mode survives reloads (per browser); the server render always starts as the board. */
+function useViewMode(): [ViewMode, (m: ViewMode) => void] {
+  const [mode, setMode] = useState<ViewMode>('board');
+  useEffect(() => {
+    try {
+      if (window.localStorage.getItem(VIEW_MODE_KEY) === 'table') setMode('table');
+    } catch {
+      // Storage unavailable: keep the default.
+    }
+  }, []);
+  const set = (m: ViewMode) => {
+    setMode(m);
+    try {
+      window.localStorage.setItem(VIEW_MODE_KEY, m);
+    } catch {
+      // Not persisted; the choice still applies for this visit.
+    }
+  };
+  return [mode, set];
+}
+
+function Inbox({ caps, initialData, initialKey, owners, teams }: Props) {
   const { params, patch, clear } = useInboxParams();
-  const [viewMode, setViewMode] = useState<'table' | 'board'>('table');
+  const [viewMode, setViewMode] = useViewMode();
+  const [selected, setSelected] = useState<Set<string>>(new Set());
 
-  const effectiveParams =
-    viewMode === 'board' ? { ...params, pageSize: '50' } : params;
-  const qs = toQueryString(effectiveParams);
+  const qs = toQueryString(params);
 
-  // Query key contract for F12: prefix ['leads'] is invalidated on lead.* events.
+  // Query key contract for F12: prefix ['leads'] is invalidated on lead.* events. In board mode
+  // this query only feeds the tabs and chips; each column fetches its own stage.
   const query = useQuery({
-    queryKey: ['leads', effectiveParams],
-    queryFn: async (): Promise<LeadListResult> => {
-      const tz = Intl.DateTimeFormat().resolvedOptions().timeZone;
-      const sp = new URLSearchParams(qs);
-      if (tz) sp.set('tz', tz);
-      const res = await apiFetch(`/api/leads?${sp.toString()}`);
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
-      return res.json();
-    },
+    queryKey: ['leads', params],
+    queryFn: () => fetchLeads(params),
     placeholderData: keepPreviousData,
     initialData: qs === initialKey ? initialData : undefined,
   });
+
+  // Selection is per result set: drop it when the filters, tab or page change.
+  useEffect(() => setSelected(new Set()), [qs]);
+  const selectedItems = (query.data?.items ?? []).filter((i) => selected.has(i.id));
+  const selectedTeams = new Set(selectedItems.map((i) => i.teamId));
+  const bulkTeamId = selectedTeams.size === 1 ? ([...selectedTeams][0] ?? null) : null;
 
   const data = query.data;
   const filtersActive = activeFilterKeys(params).length > 0;
@@ -78,9 +100,15 @@ function Inbox({ caps, initialData, initialKey, owners }: Props) {
 
   return (
     <div className="flex flex-col gap-3 p-4">
-      <h2 className="sr-only">Lead inbox</h2>
-      {data && <StatChips counts={data.counts} onSelect={onChip} />}
-      <DueTodayWidget />
+      <h1 className="sr-only">Lead inbox</h1>
+      {data && (
+        <StatChips
+          counts={data.counts}
+          onSelect={onChip}
+          scopeLabel={caps.leader ? (caps.orgWide ? 'Organisation' : 'Your team') : undefined}
+        />
+      )}
+      <DueTodayWidget leader={caps.leader} />
       <div className="flex flex-wrap items-center justify-between gap-2">
         {data && (
           <InboxTabs
@@ -90,7 +118,7 @@ function Inbox({ caps, initialData, initialKey, owners }: Props) {
             onSelect={(view) => patch({ view })}
           />
         )}
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
           <div
             className="flex rounded-md border border-slate-700"
             role="group"
@@ -150,6 +178,7 @@ function Inbox({ caps, initialData, initialKey, owners }: Props) {
               </svg>
             </button>
           </div>
+          <ScoringInfoModal />
           <InboxSearch value={params.q ?? ''} onChange={(q) => patch({ q })} />
           <select
             aria-label="Sort"
@@ -172,12 +201,13 @@ function Inbox({ caps, initialData, initialKey, owners }: Props) {
         leader={caps.leader}
         params={params}
         owners={owners}
+        teams={teams}
         onPatch={patch}
         onClear={clear}
       />
 
       {viewMode === 'board' ? (
-        <KanbanBoard items={data?.items} loading={query.isPending} />
+        <KanbanBoard params={params} canAssign={caps.leader} />
       ) : (
         <InboxTable
           items={data?.items}
@@ -187,6 +217,17 @@ function Inbox({ caps, initialData, initialKey, owners }: Props) {
           showOwner={data?.view !== 'mine'}
           emptyKind={emptyKind}
           onEmptyAction={() => (emptyKind === 'filtered' ? clear() : patch({ view: 'unassigned' }))}
+          selectable={caps.leader}
+          selectedIds={selected}
+          onSelectionChange={setSelected}
+        />
+      )}
+
+      {viewMode === 'table' && caps.leader && selected.size > 0 && (
+        <BulkActionBar
+          teamId={bulkTeamId}
+          selectedIds={[...selected]}
+          onClear={() => setSelected(new Set())}
         />
       )}
 
@@ -242,7 +283,9 @@ export function InboxView(props: Props) {
   const [client] = useState(() => getSharedQueryClient());
   return (
     <QueryClientProvider client={client}>
-      <Inbox {...props} />
+      <Suspense>
+        <Inbox {...props} />
+      </Suspense>
     </QueryClientProvider>
   );
 }

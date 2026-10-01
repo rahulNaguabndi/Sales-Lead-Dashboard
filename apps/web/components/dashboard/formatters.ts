@@ -23,9 +23,14 @@ export function formatDuration(minutes: number | null): string {
 
 export type Delta = {
   text: string;
-  direction: 'up' | 'down' | 'flat' | 'new' | 'none';
+  direction: 'up' | 'down' | 'flat' | 'none';
   good: boolean | null;
+  /** The previous value was too small for a percentage change to mean much. */
+  lowBase?: boolean;
 };
+
+/** Relative changes beyond this are shown as "> +300%" with a low-base note, not "+1064.5%". */
+export const MAX_RELATIVE_DELTA_PCT = 300;
 
 /** Delta chip content. `lowerIsBetter` flips which direction counts as good. */
 export function describeDelta(
@@ -34,15 +39,25 @@ export function describeDelta(
   lowerIsBetter = false,
   unit: 'pct-points' | 'relative' = 'relative',
 ): Delta {
-  if (value === null) return { text: '—', direction: 'none', good: null };
-  if (prev === null) return { text: 'New', direction: 'new', good: null };
+  // No comparison available: say nothing rather than "New", which reads as "something is new".
+  if (value === null || prev === null) return { text: '—', direction: 'none', good: null };
   const diff = value - prev;
   if (diff === 0) return { text: '0', direction: 'flat', good: null };
   const up = diff > 0;
   const good = lowerIsBetter ? !up : up;
-  const mag =
-    unit === 'pct-points' || prev === 0
-      ? `${Math.abs(diff).toFixed(1)}${unit === 'pct-points' ? ' pp' : ''}`
-      : `${Math.abs((diff / prev) * 100).toFixed(1)}%`;
-  return { text: `${up ? '+' : '−'}${mag}`, direction: up ? 'up' : 'down', good };
+  const sign = up ? '+' : '−';
+  if (unit === 'pct-points' || prev === 0) {
+    const mag = `${Math.abs(diff).toFixed(1)}${unit === 'pct-points' ? ' pp' : ''}`;
+    return { text: `${sign}${mag}`, direction: up ? 'up' : 'down', good, lowBase: prev === 0 };
+  }
+  const pct = Math.abs((diff / prev) * 100);
+  if (pct > MAX_RELATIVE_DELTA_PCT) {
+    return {
+      text: `${sign}>${MAX_RELATIVE_DELTA_PCT}%`,
+      direction: up ? 'up' : 'down',
+      good,
+      lowBase: true,
+    };
+  }
+  return { text: `${sign}${pct.toFixed(1)}%`, direction: up ? 'up' : 'down', good };
 }

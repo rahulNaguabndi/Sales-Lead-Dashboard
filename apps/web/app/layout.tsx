@@ -3,7 +3,9 @@ import type { ReactNode } from 'react';
 import { Toaster } from '@/components/ui/sonner';
 import './globals.css';
 
-export const metadata: Metadata = { title: 'EuroDrive Lead Desk' };
+export const metadata: Metadata = {
+  title: { default: 'EuroDrive Lead Desk', template: '%s · Lead Desk' },
+};
 
 export default function RootLayout({ children }: { children: ReactNode }) {
   return (

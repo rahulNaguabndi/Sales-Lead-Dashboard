@@ -1,7 +1,7 @@
 'use client';
 
 import { useRouter } from 'next/navigation';
-import type { Role } from '@leaddesk/shared';
+import { roleLabel, type Role } from '@leaddesk/shared';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 
@@ -20,11 +20,15 @@ export function UserMenu({
 
   return (
     <div className="flex items-center gap-2">
-      <div className="flex flex-col items-end leading-tight">
-        <span className="text-sm text-slate-200">{user.name}</span>
-        {user.teamName ? <span className="text-xs text-slate-500">{user.teamName}</span> : null}
+      <div className="hidden flex-col items-end leading-tight sm:flex">
+        <span className="whitespace-nowrap text-sm text-slate-200">{user.name}</span>
+        {user.teamName ? (
+          <span className="whitespace-nowrap text-xs text-slate-500">{user.teamName}</span>
+        ) : null}
       </div>
-      <Badge variant="secondary">{user.role}</Badge>
+      <Badge variant="secondary" title={user.name}>
+        {roleLabel(user.role)}
+      </Badge>
       <Button variant="ghost" size="sm" onClick={logout}>
         Logout
       </Button>

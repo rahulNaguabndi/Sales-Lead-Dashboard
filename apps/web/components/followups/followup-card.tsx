@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Clock } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { avatarStyle } from '@/lib/utils';
 import type { LeadSlotProps } from '@/components/leads/detail/types';
 import { fetchLeadFollowUps, patchFollowUp } from './api';
 import { AtRiskBadge } from './at-risk-badge';
@@ -22,7 +23,9 @@ export function FollowUpCard({ lead, permissions }: LeadSlotProps) {
 
   const refresh = () => {
     void qc.invalidateQueries({ queryKey: key });
-    void qc.invalidateQueries({ queryKey: ['follow-ups'] });
+    // The personal widget only; inbox lists refresh from the follow-up's live event. Invalidating
+    // the whole ['leads'] prefix here restarted this card's own fetch and delayed the update.
+    void qc.invalidateQueries({ queryKey: ['followups'] });
   };
 
   const run = async (fn: () => Promise<void>) => {
@@ -40,7 +43,10 @@ export function FollowUpCard({ lead, permissions }: LeadSlotProps) {
 
   const next = query.data?.items[0];
   const now = Date.now();
-  const overdue = next ? next.dueAt < now : false;
+  // Once the outreach cadence is finished, a past-due follow-up is a wrap-up task, not an alarm.
+  const cadenceDone = query.data?.cadence.done ?? false;
+  const pastDue = next ? next.dueAt < now : false;
+  const overdue = pastDue && !cadenceDone;
 
   return (
     <section
@@ -74,8 +80,8 @@ export function FollowUpCard({ lead, permissions }: LeadSlotProps) {
           <div className="flex items-center gap-2 text-sm">
             <span
               aria-hidden
-              className="inline-flex h-6 w-6 items-center justify-center rounded-full text-[10px] font-semibold text-white"
-              style={{ backgroundColor: next.assigneeColor ?? '#64748b' }}
+              className="inline-flex h-6 w-6 items-center justify-center rounded-full text-[10px] font-semibold"
+              style={avatarStyle(next.assigneeColor ?? '#64748b')}
               title={next.assigneeName ?? undefined}
             >
               {(next.assigneeName ?? '?')
@@ -84,12 +90,19 @@ export function FollowUpCard({ lead, permissions }: LeadSlotProps) {
                 .join('')
                 .slice(0, 2)}
             </span>
+            {next.assigneeName && (
+              <span className="text-xs text-muted-foreground">{next.assigneeName}</span>
+            )}
             <span
               className={overdue ? 'inline-flex items-center gap-1 font-medium text-red-400' : ''}
               data-testid="followup-due"
             >
               {overdue && <Clock className="h-3.5 w-3.5" aria-hidden />}
-              {formatDueLabel(next.dueAt, now)}
+              {pastDue && cadenceDone ? (
+                <span className="text-amber-400">Wrap up · {formatDueLabel(next.dueAt, now)}</span>
+              ) : (
+                formatDueLabel(next.dueAt, now)
+              )}
             </span>
           </div>
           {next.note && <p className="text-xs text-muted-foreground">{next.note}</p>}

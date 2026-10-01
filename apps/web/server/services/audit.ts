@@ -3,6 +3,7 @@ import { z } from 'zod';
 import { db as defaultDb, type Db } from '../db/client';
 import { AppError, ForbiddenError } from '../http/errors';
 import type { Scope } from '../policy';
+import { activityTypeLabel, humanize, stageLabel } from '@leaddesk/shared';
 
 export class InvalidFilterError extends AppError {
   readonly statusCode = 400;
@@ -60,8 +61,7 @@ export function decodeCursor(cursor: string): { createdAt: number; id: string } 
 // ---- pure helpers ----------------------------------------------------------------------------
 
 export type AuditActor =
-  | { id: string; name: string; role: string }
-  | { type: 'SYSTEM' | 'INTAKE' | 'JOB' };
+  { id: string; name: string; role: string } | { type: 'SYSTEM' | 'INTAKE' | 'JOB' };
 
 export type AuditItem = {
   id: string;
@@ -90,7 +90,12 @@ const REF_KEYS = ['ownerId', 'owner_id', 'assignedTo', 'assigned_to'] as const;
 const obj = (v: unknown): Record<string, unknown> =>
   v && typeof v === 'object' && !Array.isArray(v) ? (v as Record<string, unknown>) : {};
 
-const str = (v: unknown): string => (v === null || v === undefined ? '—' : String(v));
+/** "assignStrategy" / "owner_id" → "assign strategy" / "owner id". */
+const fieldName = (k: string): string =>
+  k
+    .replace(/_/g, ' ')
+    .replace(/([a-z])([A-Z])/g, (_, a: string, b: string) => `${a} ${b.toLowerCase()}`)
+    .toLowerCase();
 
 function refKey(o: Record<string, unknown>): string | undefined {
   return REF_KEYS.find((k) => k in o);
@@ -114,20 +119,26 @@ export function summarize(
     }
     case 'lead.stage':
     case 'lead.stage_change':
-      return `Stage: ${str(before.stage)} → ${str(after.stage)}`;
+    case 'lead.auto_cold':
+      return `Stage: ${stageLabel(before.stage as string | undefined)} → ${stageLabel(after.stage as string | undefined)}${entry.action === 'lead.auto_cold' ? ' (no response)' : ''}`;
     case 'lead.intake':
     case 'lead.created':
       return 'Lead created';
     case 'activity.create':
-      return `Activity logged${entry.meta?.type ? `: ${String(entry.meta.type)}` : ''}`;
+      return `Activity logged${entry.meta?.type ? `: ${activityTypeLabel(String(entry.meta.type))}` : ''}`;
+    case 'auth.login':
+      return 'Signed in';
+    case 'auth.logout':
+      return 'Signed out';
     case 'auth.login_failed':
       return 'Failed sign-in attempt';
     default: {
       const keys = Object.keys(after).filter(
         (k) => JSON.stringify(after[k]) !== JSON.stringify(before[k]),
       );
-      if (keys.length) return `${entry.action}: changed ${keys.join(', ')}`;
-      return entry.action;
+      const what = humanize(entry.action.replace(/\./g, ' ').replace(/_/g, ' '));
+      if (keys.length) return `${what}: changed ${keys.map(fieldName).join(', ')}`;
+      return what;
     }
   }
 }
@@ -215,6 +226,8 @@ type Row = {
   cust_first: string | null;
   cust_last: string | null;
   offer_title: string | null;
+  entity_user: string | null;
+  entity_team: string | null;
 };
 
 const ACTOR_TYPES = new Set(['SYSTEM', 'INTAKE', 'JOB']);
@@ -258,12 +271,15 @@ export function queryAudit(
   const rows = database.all<Row>(sql`
     SELECT al.id, al.actor_id, al.action, al.entity, al.entity_id, al.before, al.after, al.meta,
            al.created_at, u.name AS actor_name, u.role AS actor_role, l.reference AS lead_ref,
-           c.first_name AS cust_first, c.last_name AS cust_last, o.title AS offer_title
+           c.first_name AS cust_first, c.last_name AS cust_last, o.title AS offer_title,
+           eu.name AS entity_user, et.name AS entity_team
     FROM audit_log al
     LEFT JOIN users u ON u.id = al.actor_id
     LEFT JOIN leads l ON al.entity = 'lead' AND l.id = al.entity_id
     LEFT JOIN customers c ON c.id = l.customer_id
     LEFT JOIN offers o ON al.entity = 'offer' AND o.id = al.entity_id
+    LEFT JOIN users eu ON al.entity IN ('user', 'auth') AND eu.id = al.entity_id
+    LEFT JOIN teams et ON al.entity = 'team' AND et.id = al.entity_id
     ${where}
     ORDER BY al.created_at DESC, al.id DESC
     LIMIT ${f.limit + 1}
@@ -290,7 +306,11 @@ export function queryAudit(
     const entityLabel =
       r.lead_ref != null
         ? `${r.lead_ref}${r.cust_first ? ` · ${r.cust_first} ${r.cust_last ?? ''}`.trimEnd() : ''}`
-        : (r.offer_title ?? `${r.entity} ${r.entity_id}`);
+        : (r.offer_title ??
+          r.entity_user ??
+          r.entity_team ??
+          // Never show a raw ULID: name the kind of record instead.
+          humanize(r.entity));
     return {
       id: r.id,
       createdAt: r.created_at,

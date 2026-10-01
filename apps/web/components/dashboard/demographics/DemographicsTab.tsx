@@ -1,6 +1,12 @@
 'use client';
-import { useState } from 'react';
-import { DEMOGRAPHICS_RANGES, SOURCE_GROUPS, type DemographicsRange } from '@leaddesk/shared';
+import { useCallback, useMemo } from 'react';
+import { usePathname, useRouter, useSearchParams } from 'next/navigation';
+import {
+  DEMOGRAPHICS_RANGES,
+  SOURCE_GROUPS,
+  sourceGroupLabel,
+  type DemographicsRange,
+} from '@leaddesk/shared';
 import { Skeleton } from '@/components/ui/skeleton';
 import { ChannelMixChart } from './ChannelMixChart';
 import { ConversionByBandChart } from './ConversionByBandChart';
@@ -17,15 +23,46 @@ const RANGE_LABEL: Record<DemographicsRange, string> = {
   custom: 'Custom',
 };
 
-/** Team filter is offered to org-wide viewers only (the API ignores teamId for managers). */
+const PICKABLE = DEMOGRAPHICS_RANGES.filter((r) => r !== 'custom');
+
+/**
+ * Filters live in the URL with the same names and the same default (Last 30 days) as the
+ * Overview tab, so switching tabs keeps the period, team and source (F17 FR-007).
+ * Team filter is offered to org-wide viewers only (the API ignores teamId for managers).
+ */
+function useDemographicsFilters() {
+  const router = useRouter();
+  const pathname = usePathname();
+  const search = useSearchParams();
+  const raw = search.toString();
+  const filters = useMemo<DemographicsFilters>(() => {
+    const sp = new URLSearchParams(raw);
+    const range = sp.get('range') as DemographicsRange | null;
+    const group = sp.get('sourceGroup') ?? '';
+    return {
+      range: range && (PICKABLE as readonly string[]).includes(range) ? range : '30d',
+      sourceGroup: (SOURCE_GROUPS as readonly string[]).includes(group) ? group : '',
+      country: sp.get('country') ?? '',
+      teamId: sp.get('teamId') ?? '',
+    };
+  }, [raw]);
+  const set = useCallback(
+    (patch: Partial<DemographicsFilters>) => {
+      const sp = new URLSearchParams(raw);
+      for (const [k, v] of Object.entries(patch)) {
+        if (v) sp.set(k, String(v));
+        else sp.delete(k);
+      }
+      const qs = sp.toString();
+      router.replace(qs ? `${pathname}?${qs}` : pathname, { scroll: false });
+    },
+    [raw, pathname, router],
+  );
+  return { filters, set };
+}
+
 export function DemographicsTab({ teams = [] }: { teams?: { id: string; name: string }[] }) {
-  const [filters, setFilters] = useState<DemographicsFilters>({
-    range: '90d',
-    sourceGroup: '',
-    country: '',
-    teamId: '',
-  });
-  const set = (patch: Partial<DemographicsFilters>) => setFilters((f) => ({ ...f, ...patch }));
+  const { filters, set } = useDemographicsFilters();
   const { data, isLoading, isError, error, refetch } = useDemographics(filters);
 
   return (
@@ -39,7 +76,7 @@ export function DemographicsTab({ teams = [] }: { teams?: { id: string; name: st
             value={filters.range}
             onChange={(e) => set({ range: e.target.value as DemographicsRange })}
           >
-            {DEMOGRAPHICS_RANGES.filter((r) => r !== 'custom').map((r) => (
+            {PICKABLE.map((r) => (
               <option key={r} value={r}>
                 {RANGE_LABEL[r]}
               </option>
@@ -57,7 +94,7 @@ export function DemographicsTab({ teams = [] }: { teams?: { id: string; name: st
             <option value="">All sources</option>
             {SOURCE_GROUPS.map((g) => (
               <option key={g} value={g}>
-                {g.replace('_', ' ').toLowerCase()}
+                {sourceGroupLabel(g)}
               </option>
             ))}
           </select>
@@ -86,6 +123,9 @@ export function DemographicsTab({ teams = [] }: { teams?: { id: string; name: st
           </label>
         )}
         {data && <MethodologyPopover thresholds={data.thresholds} />}
+        <span className="text-xs text-muted-foreground">
+          Aggregated across all reps in scope, so there is no rep filter here.
+        </span>
       </div>
 
       {isLoading && (
@@ -113,8 +153,8 @@ export function DemographicsTab({ teams = [] }: { teams?: { id: string; name: st
           </div>
           <ModelInterestHeatmap data={data} />
           <p className="text-xs text-muted-foreground" data-testid="demographics-footnote">
-            Excluded: {data.excluded.unknownAge} leads with unknown age, {data.excluded.noModel} leads with no model
-            selected.
+            Excluded: {data.excluded.unknownAge} leads with unknown age, {data.excluded.noModel}{' '}
+            leads with no model selected.
           </p>
         </>
       )}

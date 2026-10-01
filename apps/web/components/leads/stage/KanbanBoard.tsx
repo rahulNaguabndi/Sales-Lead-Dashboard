@@ -22,6 +22,8 @@ import {
   allowedTargets,
   canReopen,
   formatEUR,
+  priorityLabel,
+  sourceLabel,
   type Role,
   type Stage,
 } from '@leaddesk/shared';
@@ -37,8 +39,6 @@ import { announce, patchStage, type StageRequest, type StageResult } from './use
 
 type Data = { columns: PipelineColumn[] };
 type Filters = { owner: string; source: string; priority: string };
-
-const sourceLabel = (s: string) => s.charAt(0) + s.slice(1).toLowerCase().replace(/_/g, ' ');
 
 function toQuery(f: Filters): string {
   const p = new URLSearchParams();
@@ -83,7 +83,8 @@ function Column({
       aria-label={`${STAGE_LABELS[column.stage]} column`}
       data-testid={`kanban-col-${column.stage}`}
       className={cn(
-        'flex w-[280px] shrink-0 flex-col rounded-lg border border-border bg-muted/30',
+        // Flexible widths: all columns (incl. Won/Lost/Cold) fit a 1920px screen without scrolling.
+        'flex min-w-[200px] flex-1 basis-0 flex-col rounded-lg border border-border bg-muted/30',
         dim && 'opacity-40',
         highlight && isOver && 'ring-2 ring-ring',
       )}
@@ -91,7 +92,10 @@ function Column({
       <header className="sticky top-0 z-10 rounded-t-lg bg-muted/80 p-3 backdrop-blur">
         <div className="flex items-center justify-between">
           <span
-            className={cn('rounded-full px-2 py-0.5 text-xs font-medium', STAGE_COLORS[column.stage])}
+            className={cn(
+              'rounded-full px-2 py-0.5 text-xs font-medium',
+              STAGE_COLORS[column.stage],
+            )}
           >
             {STAGE_LABELS[column.stage]}
             {column.stage === 'WON' || column.stage === 'LOST' ? ' (30d)' : ''}
@@ -160,7 +164,8 @@ export function KanbanBoard({
     vehicleModel: c.vehicleModel,
   });
 
-  const onDragStart = (e: DragStartEvent) => setActive((e.active.data.current?.card as PipelineCard) ?? null);
+  const onDragStart = (e: DragStartEvent) =>
+    setActive((e.active.data.current?.card as PipelineCard) ?? null);
   const onDragEnd = (e: DragEndEvent) => {
     const card = e.active.data.current?.card as PipelineCard | undefined;
     setActive(null);
@@ -180,7 +185,12 @@ export function KanbanBoard({
       <div className="flex flex-wrap items-center gap-2">
         <h1 className="mr-2 text-lg font-semibold">Pipeline</h1>
         {owners.length > 0 && canReopen(role) && (
-          <select aria-label="Owner" className={selectCls} value={filters.owner} onChange={set('owner')}>
+          <select
+            aria-label="Owner"
+            className={selectCls}
+            value={filters.owner}
+            onChange={set('owner')}
+          >
             <option value="">All owners</option>
             {owners.map((o) => (
               <option key={o.id} value={o.id}>
@@ -189,7 +199,12 @@ export function KanbanBoard({
             ))}
           </select>
         )}
-        <select aria-label="Source" className={selectCls} value={filters.source} onChange={set('source')}>
+        <select
+          aria-label="Source"
+          className={selectCls}
+          value={filters.source}
+          onChange={set('source')}
+        >
           <option value="">All sources</option>
           {LEAD_SOURCES.map((s) => (
             <option key={s} value={s}>
@@ -197,11 +212,16 @@ export function KanbanBoard({
             </option>
           ))}
         </select>
-        <select aria-label="Priority" className={selectCls} value={filters.priority} onChange={set('priority')}>
+        <select
+          aria-label="Priority"
+          className={selectCls}
+          value={filters.priority}
+          onChange={set('priority')}
+        >
           <option value="">All priorities</option>
           {PRIORITIES.map((p) => (
             <option key={p} value={p}>
-              {sourceLabel(p)}
+              {priorityLabel(p)}
             </option>
           ))}
         </select>
@@ -210,7 +230,7 @@ export function KanbanBoard({
       {isLoading && (
         <div className="flex gap-3" aria-busy="true">
           {Array.from({ length: 5 }).map((_, i) => (
-            <Skeleton key={i} className="h-80 w-[280px] shrink-0" />
+            <Skeleton key={i} className="h-80 min-w-[200px] flex-1" />
           ))}
         </div>
       )}
@@ -230,7 +250,10 @@ export function KanbanBoard({
           onDragEnd={onDragEnd}
           onDragCancel={() => setActive(null)}
         >
-          <div className="flex flex-1 items-start gap-3 overflow-x-auto pb-4" data-testid="kanban-board">
+          <div
+            className="flex flex-1 items-start gap-3 overflow-x-auto pb-4"
+            data-testid="kanban-board"
+          >
             {data.columns.map((col) => (
               <Column
                 key={col.stage}

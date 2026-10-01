@@ -392,28 +392,33 @@ export async function listAssignees(
       )[0]?.language
     : undefined;
   const counts = openCounts(db);
-  return db
-    .select()
-    .from(users)
-    .where(and(eq(users.teamId, teamId), eq(users.isActive, true), eq(users.role, 'REP')))
-    .all()
-    .map((u) => {
-      const open = counts.get(u.id) ?? 0;
-      return {
-        id: u.id,
-        name: u.name,
-        openLeads: open,
-        languages: u.languages,
-        languageMatch: lang ? u.languages.includes(lang) : false,
-        atLimit: open >= u.maxOpenLeads,
-      };
-    })
-    .sort(
-      (a, b) =>
-        Number(b.languageMatch) - Number(a.languageMatch) ||
-        a.openLeads - b.openLeads ||
-        a.name.localeCompare(b.name),
-    );
+  return (
+    db
+      .select()
+      .from(users)
+      .where(and(eq(users.teamId, teamId), eq(users.isActive, true), eq(users.role, 'REP')))
+      .all()
+      .map((u) => {
+        const open = counts.get(u.id) ?? 0;
+        return {
+          id: u.id,
+          name: u.name,
+          openLeads: open,
+          languages: u.languages,
+          languageMatch: lang ? u.languages.includes(lang) : false,
+          maxOpenLeads: u.maxOpenLeads,
+          atLimit: open >= u.maxOpenLeads,
+        };
+      })
+      // Reps with room first; over-capacity reps stay pickable but sink to the bottom.
+      .sort(
+        (a, b) =>
+          Number(a.atLimit) - Number(b.atLimit) ||
+          Number(b.languageMatch) - Number(a.languageMatch) ||
+          a.openLeads - b.openLeads ||
+          a.name.localeCompare(b.name),
+      )
+  );
 }
 
 /* ------------------------------------------------------------ auto-assign */
@@ -508,11 +513,21 @@ export async function rebalancePool(
 
 function settingsFor(teamRows: (typeof teams.$inferSelect)[]): TeamSettingsDTO[] {
   const counts = openCounts(db);
+  const pools = new Map(
+    db
+      .all<{ team_id: string; n: number }>(
+        sql`SELECT team_id, COUNT(*) AS n FROM leads
+            WHERE owner_id IS NULL AND stage IN ('NEW','CONTACTED','QUALIFIED','TEST_DRIVE','NEGOTIATION')
+            GROUP BY team_id`,
+      )
+      .map((r) => [r.team_id, r.n]),
+  );
   return teamRows.map((t) => ({
     id: t.id,
     name: t.name,
     autoAssign: t.autoAssign,
     assignStrategy: t.assignStrategy,
+    poolSize: pools.get(t.id) ?? 0,
     reps: db
       .select()
       .from(users)

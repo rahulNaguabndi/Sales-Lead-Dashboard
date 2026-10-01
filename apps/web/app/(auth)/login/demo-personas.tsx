@@ -61,8 +61,13 @@ export function DemoPersonas({ next }: { next?: string }) {
             </div>
             <div className="text-xs text-slate-400">{p.blurb}</div>
           </div>
-          <Button size="sm" disabled={busy !== null} onClick={() => go(p.email)}>
-            {busy === p.email ? '…' : 'Login as'}
+          <Button
+            size="sm"
+            disabled={busy !== null}
+            aria-label={`Log in as ${p.name}, ${p.label}`}
+            onClick={() => go(p.email)}
+          >
+            {busy === p.email ? 'Signing in…' : 'Log in'}
           </Button>
         </Card>
       ))}

@@ -1,6 +1,7 @@
 'use client';
 
 import { createContext, useCallback, useContext, useRef, useState } from 'react';
+import { QueryClientContext } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { ulid } from 'ulid';
 import type {
@@ -26,7 +27,8 @@ const NOOP_CACHE: ActivityCache = {
   invalidateQueries: () => undefined,
 };
 
-const CacheContext = createContext<ActivityCache>(NOOP_CACHE);
+// Null = not provided: fall back to the app's QueryClient (LiveProvider mounts it on every page).
+const CacheContext = createContext<ActivityCache | null>(null);
 export const ActivityCacheProvider = CacheContext.Provider;
 
 export class ApiRequestError extends Error {
@@ -41,6 +43,9 @@ export class ApiRequestError extends Error {
 }
 
 type Snapshot = [readonly unknown[], unknown][];
+
+const isOldestFirst = (key: readonly unknown[]) =>
+  (key[3] as { order?: string } | undefined)?.order === 'asc';
 
 /** Returns a copy of a cached timeline value with `row` prepended (array, {items} or {pages}). */
 function prepend(old: unknown, row: ActivityResponseDTO): unknown {
@@ -83,7 +88,9 @@ export type UseLogActivityOptions = {
 
 /** Optimistic mutation for POST /api/leads/:id/activities (FR-007). */
 export function useLogActivity({ leadId, currentUser, onSaved, onError }: UseLogActivityOptions) {
-  const cache = useContext(CacheContext);
+  const provided = useContext(CacheContext);
+  const queryClient = useContext(QueryClientContext);
+  const cache: ActivityCache = provided ?? queryClient ?? NOOP_CACHE;
   const [isPending, setPending] = useState(false);
   const inFlight = useRef(false);
   // One id per submission attempt; reused for retries after a failure, renewed after success.
@@ -114,7 +121,9 @@ export function useLogActivity({ leadId, currentUser, onSaved, onError }: UseLog
       };
       const key = ['lead', leadId, 'activities'] as const;
       const snapshot: Snapshot = cache.getQueriesData({ queryKey: key });
-      for (const [k] of snapshot) cache.setQueryData(k, (old) => prepend(old, optimistic));
+      // Prepending only makes sense for newest-first feeds; oldest-first ones refetch on success.
+      const newestFirst = snapshot.filter(([k]) => !isOldestFirst(k));
+      for (const [k] of newestFirst) cache.setQueryData(k, (old) => prepend(old, optimistic));
 
       try {
         const res = await apiFetch(`/api/leads/${leadId}/activities`, {
@@ -134,13 +143,20 @@ export function useLogActivity({ leadId, currentUser, onSaved, onError }: UseLog
         }
         const data = body as CreateActivityResponse;
         const rows = [data.activity, ...data.systemActivities].reverse();
-        for (const [k] of snapshot) {
+        for (const [k] of newestFirst) {
           cache.setQueryData(k, (old) => replaceOptimistic(old, optimistic.id, rows));
         }
         cache.setQueryData(['lead', leadId], (old) =>
           old && typeof old === 'object' ? patchLead(old as Record<string, unknown>, data) : old,
         );
-        cache.invalidateQueries({ queryKey: ['leads'] });
+        // Everything an activity can change: list rows and counts, this lead's follow-ups (card
+        // and composer), the follow-up widget, other timeline views and dashboard touches.
+        for (const k of [['leads'], ['followups'], ['dashboard'], ['pipeline']]) {
+          cache.invalidateQueries({ queryKey: k });
+        }
+        for (const [k] of snapshot.filter(([k]) => isOldestFirst(k))) {
+          cache.invalidateQueries({ queryKey: k });
+        }
         attemptId.current = ulid();
         onSaved?.(data);
         return data;

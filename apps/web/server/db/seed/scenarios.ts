@@ -235,6 +235,14 @@ export function planFollowUps(built: BuiltLead[]): FollowUpRow[] {
   const pool = rng.shuffle(
     built.filter((b) => b.lead.ownerId && b.lead.stage !== 'NEW' && isOpen(b.lead.stage as Stage)),
   );
+  // Notes must fit the lead: no "test drive" task for a lead past that stage or without the request.
+  const followUpNotes = (stage: Stage, testDrive: boolean): string[] => {
+    const notes = ['Call back about the quote', 'Send financing options', 'Confirm appointment'];
+    if (testDrive && (stage === 'CONTACTED' || stage === 'QUALIFIED')) {
+      notes.push('Check test drive availability');
+    }
+    return notes;
+  };
   const out: FollowUpRow[] = [];
   const mk = (b: BuiltLead, dueAt: number): FollowUpRow => {
     const createdAt = Math.max(
@@ -247,12 +255,7 @@ export function planFollowUps(built: BuiltLead[]): FollowUpRow[] {
       assignedTo: b.lead.ownerId as string,
       dueAt: Math.round(dueAt),
       status: 'PENDING',
-      note: rng.pick([
-        'Call back about the quote',
-        'Check test drive availability',
-        'Send financing options',
-        'Confirm appointment',
-      ]),
+      note: rng.pick(followUpNotes(b.lead.stage as Stage, !!b.lead.testDriveRequested)),
       createdBy: b.lead.ownerId as string,
       createdAt: Math.round(createdAt),
       completedAt: null,

@@ -13,7 +13,7 @@ test('signed-out visit redirects to login and returns to the page after sign-in'
 
 test('demo persona lands on role home, then logout ends the session', async ({ page }) => {
   await page.goto('/login');
-  await page.getByRole('button', { name: 'Login as' }).nth(2).click(); // Lukas Becker, Manager
+  await page.getByRole('button', { name: /Log in as Lukas Becker/ }).click();
   await expect(page).toHaveURL(/\/dashboard$/); // the page itself ships with F16
   await page.goto('/');
   await page.getByRole('button', { name: 'Logout' }).click();

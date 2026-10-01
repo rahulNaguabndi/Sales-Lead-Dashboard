@@ -1,7 +1,7 @@
 'use client';
 
 import { useMemo } from 'react';
-import { Copy, Mail, MessageCircle, MessageSquare, Phone, Star } from 'lucide-react';
+import { Mail, MessageCircle, MessageSquare, Phone, Star } from 'lucide-react';
 import { buildTelLink, channelAvailability, type Channel } from '@leaddesk/shared';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -74,27 +74,16 @@ export function ChannelBar({ lead, customer, currentUser }: LeadSlotProps) {
             }
             if (channel === 'CALL') {
               return (
-                <div key={channel} className="inline-flex gap-1">
-                  <Button asChild variant={variant} size="sm">
-                    <a
-                      href={buildTelLink(customer.phone!)}
-                      onClick={() => prefill('CALL', '')}
-                      data-channel="CALL"
-                    >
-                      {label}
-                    </a>
-                  </Button>
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="sm"
-                    aria-label="Copy phone number"
-                    onClick={() => void navigator.clipboard?.writeText(customer.phone!)}
+                // Copy phone/email live once, in the Customer card.
+                <Button key={channel} asChild variant={variant} size="sm">
+                  <a
+                    href={buildTelLink(customer.phone!)}
+                    onClick={() => prefill('CALL', '')}
+                    data-channel="CALL"
                   >
-                    <Copy aria-hidden />
-                    Copy number
-                  </Button>
-                </div>
+                    {label}
+                  </a>
+                </Button>
               );
             }
             return (

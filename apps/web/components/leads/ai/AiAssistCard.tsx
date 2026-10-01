@@ -1,7 +1,8 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { Sparkles } from 'lucide-react';
+import { useQueryClient } from '@tanstack/react-query';
+import { RotateCcw, Sparkles } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -41,16 +42,38 @@ export function AiAssistCard(props: LeadSlotProps) {
 
 function AiAssistContent({ lead, customer, permissions }: LeadSlotProps) {
   const closed = lead.stage === 'WON' || lead.stage === 'LOST';
-  const query = useSuggest(lead.id, lead.version, lead.lastActivityAt, permissions.canRead);
+  const qc = useQueryClient();
+  const key = suggestKey(lead.id, lead.version, lead.lastActivityAt);
+  // On demand: most visits never open this panel, so don't pay for a model call on every lead
+  // open. A suggestion already cached for this lead state is shown straight away.
+  const [requested, setRequested] = useState(() => qc.getQueryData(key) !== undefined);
+  const query = useSuggest(
+    lead.id,
+    lead.version,
+    lead.lastActivityAt,
+    permissions.canRead && requested,
+  );
   const regenerate = useRegenerate(lead.id);
   const data = query.data;
-  const key = suggestKey(lead.id, lead.version, lead.lastActivityAt);
 
   return (
     <Shell>
+      {!requested && permissions.canRead && (
+        <div className="space-y-2">
+          <p className="text-muted-foreground">
+            Get a short summary of this lead and a suggested next step.
+          </p>
+          <Button type="button" size="sm" variant="outline" onClick={() => setRequested(true)}>
+            <Sparkles aria-hidden className="size-4" />
+            Suggest next step
+          </Button>
+        </div>
+      )}
       {query.isLoading && <Skeleton className="h-20 w-full" />}
       {query.isError && (
-        <p className="text-muted-foreground">AI assist is unavailable right now. Use the contact buttons above.</p>
+        <p className="text-muted-foreground">
+          AI assist is unavailable right now. Use the contact buttons above.
+        </p>
       )}
       {data && (
         <>
@@ -74,7 +97,9 @@ function AiAssistContent({ lead, customer, permissions }: LeadSlotProps) {
           />
           <div className="flex items-center justify-between gap-2">
             <span className="text-xs text-muted-foreground">
-              {data.source === 'AI' ? 'AI-generated · check before sending' : 'Rule-based · check before sending'}
+              {data.source === 'AI'
+                ? 'AI-generated · check before sending'
+                : 'Rule-based · check before sending'}
             </span>
             <span className="inline-flex items-center">
               <Button
@@ -84,7 +109,8 @@ function AiAssistContent({ lead, customer, permissions }: LeadSlotProps) {
                 disabled={closed}
                 onClick={() => void regenerate(key, 'suggest')}
               >
-                ↻ Regenerate
+                <RotateCcw aria-hidden className="size-3.5" />
+                Regenerate
               </Button>
               <FeedbackButtons leadId={lead.id} kind="suggest" fingerprint={data.fingerprint} />
             </span>

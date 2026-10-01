@@ -25,9 +25,9 @@ export function NavRail({ role, pathname }: { role: Role; pathname?: string }) {
     <TooltipProvider delayDuration={100}>
       <nav
         aria-label="Main"
-        className="flex h-full w-14 shrink-0 flex-col items-center gap-1 border-r border-slate-800 bg-slate-900 py-3"
+        className="fixed inset-x-0 bottom-0 z-30 flex h-14 shrink-0 items-center justify-around border-t border-slate-800 bg-slate-900 sm:static sm:h-full sm:w-14 sm:flex-col sm:justify-start sm:gap-1 sm:border-r sm:border-t-0 sm:py-3"
       >
-        <div className="mb-3 flex h-8 w-8 items-center justify-center rounded-md bg-blue-600 text-xs font-bold text-white">
+        <div className="mb-3 hidden h-8 w-8 items-center justify-center rounded-md bg-blue-600 text-xs font-bold text-white sm:flex">
           ED
         </div>
         {getNavItems(role).map((item) => {
@@ -41,7 +41,7 @@ export function NavRail({ role, pathname }: { role: Role; pathname?: string }) {
                   aria-label={item.label}
                   aria-current={isActive ? 'page' : undefined}
                   className={cn(
-                    'flex h-10 w-full items-center justify-center border-l-2 border-transparent text-slate-400 transition-colors hover:text-slate-100',
+                    'flex h-10 w-full items-center justify-center border-t-2 border-transparent text-slate-400 transition-colors hover:text-slate-100 sm:border-l-2 sm:border-t-0',
                     isActive && 'border-blue-600 text-slate-100',
                   )}
                 >

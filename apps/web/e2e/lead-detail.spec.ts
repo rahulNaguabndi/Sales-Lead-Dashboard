@@ -35,7 +35,9 @@ function leadFor(ownerEmail: string, inScope: boolean) {
   }
 }
 
-test('rep opens a lead, toggles timeline order and the preference persists', async ({ page }) => {
+test('rep opens a lead: newest activity first, toggle works, reload resets to newest', async ({
+  page,
+}) => {
   const email = 'sofia.rossi@eurodrive.test';
   await signIn(page.request, email);
   const lead = leadFor(email, true);
@@ -51,7 +53,8 @@ test('rep opens a lead, toggles timeline order and the preference persists', asy
   await expect.poll(firstEntry).not.toBe(newestFirst);
 
   await page.reload();
-  await expect(page.getByRole('button', { name: 'Oldest first' })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Newest first' })).toBeVisible();
+  await expect.poll(firstEntry).toBe(newestFirst);
 });
 
 test('out-of-scope deep link shows the not-found page', async ({ page }) => {
@@ -60,7 +63,7 @@ test('out-of-scope deep link shows the not-found page', async ({ page }) => {
   const other = leadFor(email, false);
   const res = await page.goto(`/leads/${other.id}`);
   expect(res?.status()).toBe(404);
-  await expect(page.getByText(/may not exist or you may not have access/)).toBeVisible();
+  await expect(page.getByText(/isn.t assigned to you or your team/)).toBeVisible();
   await expect(page.getByRole('link', { name: 'Back to inbox' })).toBeVisible();
 });
 

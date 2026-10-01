@@ -37,7 +37,7 @@ test.describe('audit log (F19)', () => {
     await page.getByTestId('audit-trail-link').click();
     await expect(page).toHaveURL(new RegExp(`/audit\\?entity=lead&entityId=${leadId}`));
 
-    const row = page.getByTestId('audit-row').filter({ hasText: 'lead.assign' }).first();
+    const row = page.getByTestId('audit-row').filter({ hasText: 'Lead assigned' }).first();
     await expect(row).toBeVisible({ timeout: 30_000 });
     await expect(row).toContainText('Jonas Fischer');
     await row.getByRole('button', { name: /Expand details/ }).click();

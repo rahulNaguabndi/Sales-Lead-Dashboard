@@ -1,4 +1,4 @@
-import type { Stage } from '@leaddesk/shared';
+import { stageLabel, type Stage } from '@leaddesk/shared';
 import { STAGE_COLORS, STAGE_DOT_COLORS } from '@/components/ui/tokens';
 import { cn } from '@/lib/utils';
 
@@ -11,7 +11,7 @@ export function StageChip({ stage }: { stage: Stage }) {
       )}
     >
       <span aria-hidden className={cn('h-1.5 w-1.5 rounded-full', STAGE_DOT_COLORS[stage])} />
-      {stage.replace('_', ' ')}
+      {stageLabel(stage)}
     </span>
   );
 }

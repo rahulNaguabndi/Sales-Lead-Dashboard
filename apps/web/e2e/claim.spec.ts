@@ -1,14 +1,39 @@
 import { expect, test } from '@playwright/test';
 import path from 'node:path';
 import Database from 'better-sqlite3';
-import { signIn } from './helpers';
+import { signIn, preferTableView } from './helpers';
 
-// The seed gives reps more open leads than max_open_leads, so claims would hit the limit.
+test.beforeEach(async ({ page }) => preferTableView(page));
+
+// The seed gives reps more open leads than max_open_leads, so claims would hit the limit. Raise
+// the caps for this file only and put the previous values back afterwards: leaving 1000 in the
+// shared dev database is what made Team settings show "Max open 1000" for everyone.
+const dbPath = () =>
+  path.resolve(
+    process.cwd(),
+    'apps/web',
+    (process.env.DATABASE_URL ?? './data/leaddesk.db').replace(/^file:/, ''),
+  );
+let savedCaps: { id: string; max_open_leads: number }[] = [];
+
 test.beforeAll(() => {
-  const url = process.env.DATABASE_URL ?? './data/leaddesk.db';
-  const conn = new Database(path.resolve(process.cwd(), 'apps/web', url.replace(/^file:/, '')));
+  const conn = new Database(dbPath());
   try {
-    conn.prepare('UPDATE users SET max_open_leads = 1000').run();
+    savedCaps = conn.prepare('SELECT id, max_open_leads FROM users').all() as typeof savedCaps;
+    conn.prepare('UPDATE users SET max_open_leads = 100').run();
+  } finally {
+    conn.close();
+  }
+});
+
+test.afterAll(() => {
+  const conn = new Database(dbPath());
+  try {
+    const restore = conn.prepare('UPDATE users SET max_open_leads = ? WHERE id = ?');
+    // Older runs left 1000 behind; anything above the settings limit goes back to the default.
+    conn.transaction(() => {
+      for (const u of savedCaps) restore.run(u.max_open_leads > 100 ? 25 : u.max_open_leads, u.id);
+    })();
   } finally {
     conn.close();
   }
@@ -34,6 +59,7 @@ test.describe('claim (F11)', () => {
   test('a second session gets the already-claimed conflict', async ({ browser }) => {
     const a = await (await browser.newContext()).newPage();
     const b = await (await browser.newContext()).newPage();
+    await preferTableView(b);
     await signIn(a, 'anna.weber@eurodrive.test');
     await signIn(b, 'jonas.fischer@eurodrive.test');
     await b.goto('/inbox?view=unassigned');

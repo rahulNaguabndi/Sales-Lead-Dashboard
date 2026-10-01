@@ -1,11 +1,9 @@
 'use client';
 import { useState } from 'react';
-import { CHANNELS, type DemographicsResponse } from '@leaddesk/shared';
+import { CHANNELS, channelLabel, type DemographicsResponse } from '@leaddesk/shared';
 import { CHANNEL_COLORS } from './palette';
 import { SuppressedMark } from './SuppressedMark';
 import { ChartCard, ViewToggle, type View } from './ViewToggle';
-
-const LABEL = { CALL: 'Call', WHATSAPP: 'WhatsApp', SMS: 'SMS', EMAIL: 'Email' } as const;
 
 export function ChannelMixChart({ data }: { data: DemographicsResponse }) {
   const [view, setView] = useState<View>('chart');
@@ -15,13 +13,17 @@ export function ChannelMixChart({ data }: { data: DemographicsResponse }) {
       testId="demographics-channel"
       title="Preferred channel by age band"
       insight={data.insights.channelMix}
+      rule={`n = leads. Bands with fewer than ${min} are hidden.`}
       toggle={<ViewToggle view={view} onChange={setView} />}
     >
       <ul className="mb-2 flex flex-wrap gap-3 text-xs" aria-label="Legend">
         {CHANNELS.map((ch) => (
           <li key={ch} className="flex items-center gap-1">
-            <span className="inline-block h-3 w-3 rounded-sm" style={{ background: CHANNEL_COLORS[ch].light }} />
-            {LABEL[ch]}
+            <span
+              className="inline-block h-3 w-3 rounded-sm"
+              style={{ background: CHANNEL_COLORS[ch].light }}
+            />
+            {channelLabel(ch)}
           </li>
         ))}
       </ul>
@@ -33,14 +35,17 @@ export function ChannelMixChart({ data }: { data: DemographicsResponse }) {
               {m.suppressed ? (
                 <SuppressedMark n={m.n} min={min} className="flex-1" />
               ) : (
-                <div className="flex h-6 flex-1 gap-0.5" title={`Counted once per lead (n = ${m.n})`}>
+                <div
+                  className="flex h-6 flex-1 gap-0.5"
+                  title={`Counted once per lead (n = ${m.n})`}
+                >
                   {CHANNELS.map((ch) =>
                     m.shares[ch] > 0 ? (
                       <div
                         key={ch}
                         className="flex items-center justify-center overflow-hidden text-[11px] text-white"
                         style={{ width: `${m.shares[ch]}%`, background: CHANNEL_COLORS[ch].light }}
-                        title={`${LABEL[ch]}: ${m.shares[ch]}%`}
+                        title={`${channelLabel(ch)}: ${m.shares[ch]}%`}
                       >
                         {m.shares[ch] >= 8 ? `${Math.round(m.shares[ch])}%` : ''}
                       </div>
@@ -60,7 +65,7 @@ export function ChannelMixChart({ data }: { data: DemographicsResponse }) {
               <th scope="col">n</th>
               {CHANNELS.map((ch) => (
                 <th key={ch} scope="col">
-                  {LABEL[ch]}
+                  {channelLabel(ch)}
                 </th>
               ))}
             </tr>

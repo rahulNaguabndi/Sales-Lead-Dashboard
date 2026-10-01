@@ -34,9 +34,27 @@ export function KpiTile({ label, kpi, format, href, hero, unit, hint }: TileProp
       >
         {format(kpi.value)}
       </div>
-      <div className={`text-xs ${color}`} aria-label={`Change vs previous period: ${delta.text}`}>
-        {arrow} {delta.text} <span className="text-muted-foreground">vs prev.</span>
-      </div>
+      {delta.direction === 'none' ? (
+        <div
+          className="text-xs text-muted-foreground"
+          aria-label="No comparison with the previous period"
+        >
+          — <span>no comparison</span>
+        </div>
+      ) : (
+        <div
+          className={`text-xs ${color}`}
+          aria-label={`Change vs previous period: ${delta.text}${delta.lowBase ? ' (low base)' : ''}`}
+          title={
+            delta.lowBase
+              ? `Previous period: ${format(kpi.prev)}. The base is small, so the change is large.`
+              : undefined
+          }
+        >
+          {arrow} {delta.text} <span className="text-muted-foreground">vs prev.</span>
+          {delta.lowBase && <span className="ml-1 text-muted-foreground">(low base)</span>}
+        </div>
+      )}
       {kpi.series && kpi.series.length > 1 && (
         <div className="mt-1 h-8" aria-hidden="true">
           <ResponsiveContainer width="100%" height="100%">

@@ -6,6 +6,7 @@ import { eq } from 'drizzle-orm';
 import { db } from '@/server/db/client';
 import { teams } from '@/server/db/schema';
 import { LiveProvider } from '@/components/live/LiveProvider';
+import { CurrentUserProvider } from '@/components/layout/current-user';
 import { getCurrentUser } from '@/server/auth/get-current-user';
 
 export const dynamic = 'force-dynamic';
@@ -20,13 +21,18 @@ export default async function AppLayout({ children }: { children: ReactNode }) {
 
   return (
     <LiveProvider userId={user.id}>
-      <div className="flex h-screen">
-        <NavRail role={user.role} />
-        <div className="flex min-w-0 flex-1 flex-col">
-          <TopBar user={{ ...user, teamName }} />
-          <main className="flex-1 overflow-auto">{children}</main>
+      <CurrentUserProvider
+        user={{ id: user.id, name: user.name, role: user.role, teamId: user.teamId }}
+      >
+        <div className="flex h-screen overflow-hidden">
+          {/* Below `sm` the rail becomes a bottom tab bar, so the page never scrolls sideways. */}
+          <NavRail role={user.role} />
+          <div className="flex min-w-0 flex-1 flex-col">
+            <TopBar user={{ ...user, teamName }} />
+            <main className="min-w-0 flex-1 overflow-auto pb-14 sm:pb-0">{children}</main>
+          </div>
         </div>
-      </div>
+      </CurrentUserProvider>
     </LiveProvider>
   );
 }

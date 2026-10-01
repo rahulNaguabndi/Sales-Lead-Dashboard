@@ -170,13 +170,15 @@ describe('assign (US-2, US-4)', () => {
     expect(lastNote(id)).toContain('Moved from Team DACH to Team South');
   });
 
-  it('assignee picker: reps only, language match first, scoped', async () => {
+  it('assignee picker: reps only, room first, then language match, scoped', async () => {
     const id = pool();
     const lukas = user(EM.lukas);
     const list = await svc.listAssignees(lukas, lukas.teamId!, id);
     expect(list).toHaveLength(4);
+    for (const a of list) expect(a.atLimit).toBe(a.openLeads >= a.maxOpenLeads);
     const sorted = [...list].sort(
       (a, b) =>
+        Number(a.atLimit) - Number(b.atLimit) ||
         Number(b.languageMatch) - Number(a.languageMatch) ||
         a.openLeads - b.openLeads ||
         a.name.localeCompare(b.name),

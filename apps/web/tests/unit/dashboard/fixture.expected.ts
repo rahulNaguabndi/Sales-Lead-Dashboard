@@ -18,7 +18,9 @@
  *   jonas: open 2 (D5 D6) new 3 contacted 2 cov 66.7 frt 65 sla 0 overdue 1 won 0
  *   lea  : open 2 (D9 P3) new 1 contacted 1 cov 100.0 frt 45 sla 0 overdue 0
  *
- * Funnel (created in period): reached NEW 11 CONTACTED 7 QUALIFIED 3 TEST_DRIVE 1 NEGOTIATION 1 WON 1
+ * Funnel (created in period): reached NEW 11 CONTACTED 7 QUALIFIED 3 TEST_DRIVE 2 NEGOTIATION 2 WON 1
+ *   (reaching a later stage counts as passing every earlier one, so a lead that skipped Test drive
+ *   still counts there: the funnel is monotonic)
  *                              current NEW 4 CONTACTED 3 QUALIFIED 1 TEST_DRIVE 0 NEGOTIATION 1 WON 1
  *   (D5 moved QUALIFIED → CONTACTED → QUALIFIED and counts once per stage)
  */
@@ -80,6 +82,6 @@ export const LEADERBOARD = {
 } as const;
 
 export const FUNNEL = {
-  reached: { NEW: 11, CONTACTED: 7, QUALIFIED: 3, TEST_DRIVE: 1, NEGOTIATION: 1, WON: 1 },
+  reached: { NEW: 11, CONTACTED: 7, QUALIFIED: 3, TEST_DRIVE: 2, NEGOTIATION: 2, WON: 1 },
   current: { NEW: 4, CONTACTED: 3, QUALIFIED: 1, TEST_DRIVE: 0, NEGOTIATION: 1, WON: 1 },
 };

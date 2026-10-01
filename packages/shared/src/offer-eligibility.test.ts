@@ -171,9 +171,9 @@ describe('formatOfferValue', () => {
   it('formats each discount type', () => {
     expect(formatOfferValue(offer({ value: 150_000 }))).toBe(formatEUR(150_000));
     expect(formatOfferValue(offer({ value: 150_000 }))).toMatch(/^1\.500\s€$/);
-    expect(formatOfferValue(offer({ discountType: 'PERCENT', value: 5 }))).toMatch(/^5\s%$/);
-    expect(formatOfferValue(offer({ discountType: 'APR', value: 90 }))).toMatch(/^0,9\s%\sAPR$/);
-    expect(formatOfferValue(offer({ discountType: 'APR', value: 0 }))).toMatch(/^0\s%\sAPR$/);
+    expect(formatOfferValue(offer({ discountType: 'PERCENT', value: 5 }))).toBe('5%');
+    expect(formatOfferValue(offer({ discountType: 'APR', value: 90 }))).toBe('0.9% APR');
+    expect(formatOfferValue(offer({ discountType: 'APR', value: 0 }))).toBe('0% APR');
     expect(
       formatOfferValue(
         offer({ discountType: 'GIFT', value: null, description: 'Free winter tyres' }),

@@ -3,6 +3,7 @@
 import {
   SCORING_WEIGHTS,
   explainScore,
+  priorityLabel,
   type Priority,
   type ScoreBreakdownValues,
   type ScoreFactor,
@@ -52,45 +53,21 @@ export function ScoreBadge({
   return (
     <Popover>
       <PopoverTrigger
-        aria-label={`Lead score ${score}, ${priority}. Show breakdown`}
+        aria-label={`Lead score ${score}, ${priorityLabel(priority)}. Show breakdown`}
         className={cn(
           'inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-xs font-semibold focus:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2',
           PRIORITY_STYLES[priority],
           className,
         )}
       >
-        <span>{priority}</span>
+        <span>{priorityLabel(priority)}</span>
         <span className="tabular-nums">{score}</span>
       </PopoverTrigger>
       <PopoverContent className="w-80 space-y-3">
         <p className="text-sm font-semibold">
-          Score {score} / 100 · {priority}
+          Score {score} / 100 · {priorityLabel(priority)}
         </p>
-        <ul className="space-y-2">
-          {FACTORS.map(({ key, label, max }) => (
-            <li key={key} className="text-xs">
-              <div className="flex justify-between">
-                <span>{label}</span>
-                <span className="tabular-nums">
-                  {breakdown[key]} / {max}
-                </span>
-              </div>
-              <div
-                role="progressbar"
-                aria-label={label}
-                aria-valuemin={0}
-                aria-valuemax={max}
-                aria-valuenow={breakdown[key]}
-                className="mt-1 h-1.5 rounded bg-muted"
-              >
-                <div
-                  className="h-full rounded bg-foreground/70"
-                  style={{ width: `${Math.min(100, (breakdown[key] / max) * 100)}%` }}
-                />
-              </div>
-            </li>
-          ))}
-        </ul>
+        <ScoreBreakdownList breakdown={breakdown} />
         {reasons.length > 0 && (
           <ul className="space-y-0.5 text-xs text-muted-foreground">
             {reasons.map((r, i) => (
@@ -106,5 +83,36 @@ export function ScoreBadge({
         </p>
       </PopoverContent>
     </Popover>
+  );
+}
+
+/** The five factor bars; shown in the badge popover and inline on the lead's score card. */
+export function ScoreBreakdownList({ breakdown }: { breakdown: ScoreBreakdownValues }) {
+  return (
+    <ul className="space-y-2">
+      {FACTORS.map(({ key, label, max }) => (
+        <li key={key} className="text-xs">
+          <div className="flex justify-between">
+            <span>{label}</span>
+            <span className="tabular-nums">
+              {breakdown[key]} / {max}
+            </span>
+          </div>
+          <div
+            role="progressbar"
+            aria-label={label}
+            aria-valuemin={0}
+            aria-valuemax={max}
+            aria-valuenow={breakdown[key]}
+            className="mt-1 h-1.5 rounded bg-muted"
+          >
+            <div
+              className="h-full rounded bg-foreground/70"
+              style={{ width: `${Math.min(100, (breakdown[key] / max) * 100)}%` }}
+            />
+          </div>
+        </li>
+      ))}
+    </ul>
   );
 }

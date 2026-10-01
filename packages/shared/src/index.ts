@@ -20,3 +20,4 @@ export * from './offer-eligibility';
 export * from './schemas/stage';
 export * from './dashboard';
 export * from './demographics';
+export * from './labels';

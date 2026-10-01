@@ -14,12 +14,24 @@ const CHIPS: { key: StatChipKey; label: string }[] = [
 export function StatChips({
   counts,
   onSelect,
+  scopeLabel,
 }: {
   counts: TabCounts;
   onSelect: (key: StatChipKey) => void;
+  /** Leaders: says whose numbers these are, so they don't clash with the personal widget. */
+  scopeLabel?: string;
 }) {
   return (
-    <div className="flex flex-wrap gap-2" aria-label="Summary">
+    <div
+      className="flex flex-wrap items-center gap-2"
+      role="group"
+      aria-label={scopeLabel ? `${scopeLabel} summary` : 'Summary'}
+    >
+      {scopeLabel && (
+        <span className="text-xs font-medium uppercase tracking-wide text-slate-500">
+          {scopeLabel}
+        </span>
+      )}
       {CHIPS.map((c) => (
         <button
           key={c.key}

@@ -7,7 +7,8 @@ export type OffersResult = { offers: OfferRow[]; offerIds: Record<string, string
 
 export function seedOffers(vpId: string): OffersResult {
   const now = clock.now;
-  const farFuture = now + 365 * 3 * DAY;
+  // Evergreen offers run for a realistic season, not years (seed offers valid to 2029 looked like mistakes).
+  const seasonEnd = now + 180 * DAY;
   const createdAt = now - 130 * DAY;
   const def = (
     title: string,
@@ -34,7 +35,7 @@ export function seedOffers(vpId: string): OffersResult {
   const offers: OfferRow[] = [
     def(
       'Loyalty Bonus',
-      'EUR 1,000 off for returning EuroDrive customers.',
+      '1.000 € off for returning EuroDrive customers.',
       'AMOUNT',
       100_000,
       now - 60 * DAY,
@@ -43,7 +44,7 @@ export function seedOffers(vpId: string): OffersResult {
     ),
     def(
       'Autumn Cashback',
-      'EUR 750 cashback on any new vehicle.',
+      '750 € cashback on any new vehicle.',
       'AMOUNT',
       75_000,
       now - 20 * DAY,
@@ -54,11 +55,11 @@ export function seedOffers(vpId: string): OffersResult {
     ),
     def(
       'Trade-in Boost',
-      'EUR 1,500 extra when you trade in your old car.',
+      '1.500 € extra when you trade in your old car.',
       'AMOUNT',
       150_000,
       now - 90 * DAY,
-      farFuture,
+      seasonEnd,
       {
         requiresTradeIn: true,
       },
@@ -69,7 +70,7 @@ export function seedOffers(vpId: string): OffersResult {
       'APR',
       0,
       now - 90 * DAY,
-      farFuture,
+      seasonEnd,
       {
         requiresFinance: true,
         models: ['luma-ev', 'aurora-suv'],
@@ -81,7 +82,7 @@ export function seedOffers(vpId: string): OffersResult {
       'PERCENT',
       5,
       now - 45 * DAY,
-      farFuture,
+      seasonEnd,
       {
         models: ['luma-ev'],
         countries: ['DE', 'NL', 'FR'],
@@ -89,7 +90,7 @@ export function seedOffers(vpId: string): OffersResult {
     ),
     def(
       'Summer Sale',
-      'EUR 500 off any vehicle (ended).',
+      '500 € off any vehicle (ended).',
       'AMOUNT',
       50_000,
       now - 120 * DAY,

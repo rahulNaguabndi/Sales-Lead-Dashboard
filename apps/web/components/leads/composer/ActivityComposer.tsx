@@ -23,6 +23,7 @@ import { StageSelect } from './StageSelect';
 import { TypeSegmentedControl } from './TypeSegmentedControl';
 import { ComposerProvider, useOptionalComposer } from './useComposer';
 import { ApiRequestError, useLogActivity } from './useLogActivity';
+import { useRefresh } from '@/components/leads/assign/useRefresh';
 
 export type ActivityComposerProps = {
   lead: { id: string; stage: Stage; version: number; ownerId: string | null };
@@ -51,6 +52,7 @@ function ComposerBody({
   onCloseLead,
 }: ActivityComposerProps) {
   const composer = useOptionalComposer()!;
+  const refresh = useRefresh();
   const { fields, setFields, expanded, setExpanded, noteRef, outcomeRef } = composer;
   const [followUp, setFollowUp] = useState<FollowUpValue>(undefined);
   const [stageTo, setStageTo] = useState<Stage | ''>('');
@@ -106,6 +108,18 @@ function ComposerBody({
   const overLimit = noteLength > NOTE_MAX_LENGTH;
   const hasText = fields.note.trim().length > 0;
   const canSubmit = parsed.success && !isPending;
+  // A disabled button must say why (FR-012 errors, phrased as the next step).
+  const hint = parsed.success
+    ? null
+    : errors.note || !hasText
+      ? overLimit
+        ? `Shorten the note to ${NOTE_MAX_LENGTH} characters`
+        : 'Write a note to log this activity'
+      : errors.outcome
+        ? 'Pick an outcome'
+        : errors['nextFollowUp.dueAt']
+          ? 'Fix the follow-up date'
+          : (Object.values(errors)[0] ?? null);
 
   if (!canLog) {
     return (
@@ -142,6 +156,8 @@ function ComposerBody({
       nextFollowUp: input.nextFollowUp,
     });
     if (res) {
+      // A stage move or follow-up change shows up in server-rendered parts (header, stage chip).
+      if (input.stageChange || input.nextFollowUp || input.completeFollowUpId) refresh(lead.id);
       setFields(resetAfterSave);
       setFollowUp(undefined);
       setStageTo('');
@@ -249,8 +265,15 @@ function ComposerBody({
       ) : null}
 
       <div className="flex items-center justify-between">
-        <span className="text-xs text-slate-500">Ctrl/&#8984;+Enter to log</span>
-        <Button type="button" onClick={() => void doSubmit()} disabled={!canSubmit}>
+        <span className="text-xs text-slate-500" id="composer-hint" aria-live="polite">
+          {hint && !isPending ? hint : 'Ctrl/⌘+Enter to log'}
+        </span>
+        <Button
+          type="button"
+          onClick={() => void doSubmit()}
+          disabled={!canSubmit}
+          aria-describedby="composer-hint"
+        >
           {isPending ? 'Saving…' : 'Log activity'}
         </Button>
       </div>

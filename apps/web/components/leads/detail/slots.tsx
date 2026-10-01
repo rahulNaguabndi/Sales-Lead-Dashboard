@@ -1,7 +1,7 @@
 import type { ComponentType } from 'react';
 import Link from 'next/link';
 import type { LeadSlotProps } from './types';
-import { ActivityComposer } from '@/components/leads/composer';
+import { ComposerSlot } from '@/components/leads/composer/ComposerSlot';
 import { LeadHeaderAssign } from '@/components/leads/assign/LeadHeaderAssign';
 import { UpdatedByNote } from '@/components/live/UpdatedByNote';
 import { FollowUpCard } from '@/components/followups/followup-card';
@@ -48,7 +48,7 @@ export type LeadSlots = Record<LeadSlotName, ComponentType<LeadSlotProps> | null
  * F18 ai, F07/F11 headerActions). Null renders nothing.
  */
 export const leadSlots: LeadSlots = {
-  composer: ActivityComposer as ComponentType<LeadSlotProps>,
+  composer: ComposerSlot as ComponentType<LeadSlotProps>,
   channels: ChannelBar as ComponentType<LeadSlotProps>,
   followUps: FollowUpCard as ComponentType<LeadSlotProps>,
   offers: OffersPanel as ComponentType<LeadSlotProps>,

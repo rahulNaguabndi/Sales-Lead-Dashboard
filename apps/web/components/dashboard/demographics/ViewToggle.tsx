@@ -3,7 +3,11 @@ export type View = 'chart' | 'table';
 
 export function ViewToggle({ view, onChange }: { view: View; onChange: (v: View) => void }) {
   return (
-    <div role="group" aria-label="View" className="inline-flex overflow-hidden rounded-md border text-xs">
+    <div
+      role="group"
+      aria-label="View"
+      className="inline-flex overflow-hidden rounded-md border text-xs"
+    >
       {(['chart', 'table'] as const).map((v) => (
         <button
           key={v}
@@ -24,12 +28,15 @@ export function ViewToggle({ view, onChange }: { view: View; onChange: (v: View)
 export function ChartCard({
   title,
   insight,
+  rule,
   toggle,
   children,
   testId,
 }: {
   title: string;
   insight?: string;
+  /** The minimum-sample rule for this chart, stated up front (each chart counts something different). */
+  rule?: string;
   toggle: React.ReactNode;
   children: React.ReactNode;
   testId: string;
@@ -40,6 +47,7 @@ export function ChartCard({
         <div>
           <h3 className="text-sm font-semibold">{title}</h3>
           {insight && <p className="text-xs text-muted-foreground">{insight}</p>}
+          {rule && <p className="text-[11px] text-muted-foreground/80">{rule}</p>}
         </div>
         {toggle}
       </header>

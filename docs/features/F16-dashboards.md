@@ -41,7 +41,7 @@ One `/dashboard` route whose content depends on the viewer's role and scope. Rep
 ### US-4 (P1): Funnel and stage flow
 *As a manager or VP, I want to see how many leads reach each stage so that I can spot where leads stall.*
 
-1. **Given** the selected period, **When** the funnel renders, **Then** it shows the counts of leads created in the period that reached (current stage or history) NEW, CONTACTED, QUALIFIED, TEST_DRIVE, NEGOTIATION, WON, with the step-to-step conversion % labeled between bars.
+1. **Given** the selected period, **When** the funnel renders, **Then** it shows the counts of leads created in the period that reached (current stage or history) NEW, CONTACTED, QUALIFIED, TEST_DRIVE, NEGOTIATION, WON, with the step-to-step conversion % labeled between bars. A lead counts as having reached every stage up to the furthest one it reached, so the funnel is monotonic even when a stage was skipped. The card subtitle states the cohort definition, because "Won" here (won leads created in the period) differs from the Pipeline's "Won (30d)" (won in the period, any creation date).
 2. **Given** a funnel bar is clicked, **When** the drill-down fires, **Then** the inbox opens filtered to leads currently in that stage within the period.
 
 ### US-5 (P2): Rep sees personal performance

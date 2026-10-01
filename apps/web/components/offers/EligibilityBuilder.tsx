@@ -1,6 +1,12 @@
 'use client';
 
-import { COUNTRIES, LEAD_SOURCES, VEHICLES, type OfferEligibilityRules } from '@leaddesk/shared';
+import {
+  COUNTRIES,
+  LEAD_SOURCES,
+  VEHICLES,
+  sourceLabel,
+  type OfferEligibilityRules,
+} from '@leaddesk/shared';
 import { Input } from '@/components/ui/input';
 import { cn } from '@/lib/utils';
 
@@ -74,7 +80,12 @@ export function EligibilityBuilder({ value, onChange, disabled }: Props) {
   };
 
   return (
-    <section aria-label="Who is eligible?" className="space-y-3 rounded-md border p-3">
+    <section
+      id="offer-eligibility"
+      tabIndex={-1}
+      aria-label="Who is eligible?"
+      className="space-y-3 rounded-md border p-3"
+    >
       <h3 className="text-sm font-semibold">Who is eligible?</h3>
       <div className="grid gap-1.5">
         <label htmlFor="elig-customer" className="text-sm font-medium">
@@ -154,7 +165,7 @@ export function EligibilityBuilder({ value, onChange, disabled }: Props) {
       <Chips
         label="Lead sources"
         disabled={disabled}
-        options={LEAD_SOURCES.map((s) => ({ value: s, label: s.replace('_', ' ').toLowerCase() }))}
+        options={LEAD_SOURCES.map((s) => ({ value: s, label: sourceLabel(s) }))}
         selected={value.sources ?? []}
         onToggle={(v) => onChange(toggleRule(value, 'sources', v))}
       />

@@ -17,6 +17,9 @@ export const bulkAssignBodySchema = z.object({
 });
 export type BulkAssignBody = z.infer<typeof bulkAssignBodySchema>;
 
+/** Upper bound for a rep's open-lead cap; keeps settings realistic (the default is 25). */
+export const MAX_OPEN_LEADS_LIMIT = 100;
+
 export const teamSettingsPatchSchema = z.object({
   autoAssign: z.boolean(),
   assignStrategy: z.enum(ASSIGN_STRATEGIES),
@@ -25,7 +28,7 @@ export const teamSettingsPatchSchema = z.object({
       z.object({
         id: z.string().min(1),
         isActive: z.boolean().optional(),
-        maxOpenLeads: z.number().int().min(1).max(500).optional(),
+        maxOpenLeads: z.number().int().min(1).max(MAX_OPEN_LEADS_LIMIT).optional(),
       }),
     )
     .optional(),
@@ -38,6 +41,8 @@ export type AssigneeDTO = {
   openLeads: number;
   languages: string[];
   languageMatch: boolean;
+  /** The rep's claim/assignment cap (users.max_open_leads). */
+  maxOpenLeads: number;
   atLimit: boolean;
 };
 
@@ -46,6 +51,8 @@ export type TeamSettingsDTO = {
   name: string;
   autoAssign: boolean;
   assignStrategy: (typeof ASSIGN_STRATEGIES)[number];
+  /** Open leads in the team's unassigned pool (what "Rebalance pool" would hand out). */
+  poolSize: number;
   reps: {
     id: string;
     name: string;

@@ -1,6 +1,6 @@
 'use client';
 
-import { useRef } from 'react';
+import { useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import type { LeadListItem } from '@/server/services/lead-query';
 import { Button } from '@/components/ui/button';
@@ -17,6 +17,9 @@ export function InboxTable({
   showOwner,
   emptyKind,
   onEmptyAction,
+  selectable = false,
+  selectedIds,
+  onSelectionChange,
 }: {
   items: LeadListItem[] | undefined;
   loading: boolean;
@@ -25,8 +28,34 @@ export function InboxTable({
   showOwner: boolean;
   emptyKind: EmptyKind;
   onEmptyAction: () => void;
+  /** Leaders: checkboxes for bulk assign. */
+  selectable?: boolean;
+  selectedIds?: ReadonlySet<string>;
+  onSelectionChange?: (ids: Set<string>) => void;
 }) {
   const router = useRouter();
+  const [pendingId, setPendingId] = useState<string | null>(null);
+  const open = (id: string) => {
+    setPendingId(id);
+    router.push(`/leads/${id}`);
+  };
+  const selected = selectedIds ?? new Set<string>();
+  const pageIds = items?.map((i) => i.id) ?? [];
+  const allSelected = pageIds.length > 0 && pageIds.every((id) => selected.has(id));
+  const toggle = (id: string) => {
+    const next = new Set(selected);
+    if (next.has(id)) next.delete(id);
+    else next.add(id);
+    onSelectionChange?.(next);
+  };
+  const toggleAll = () => {
+    const next = new Set(selected);
+    for (const id of pageIds) {
+      if (allSelected) next.delete(id);
+      else next.add(id);
+    }
+    onSelectionChange?.(next);
+  };
   const body = useRef<HTMLTableSectionElement>(null);
   const { highlightedIds } = useInboxLive();
   const now = Date.now();
@@ -54,6 +83,17 @@ export function InboxTable({
       <table className="w-full text-left text-sm" data-testid="inbox-table">
         <thead className="sticky top-0 z-10 bg-slate-950 text-xs uppercase text-slate-400">
           <tr className="h-8 border-b border-slate-800">
+            {selectable && (
+              <th className="w-8 pl-3">
+                <input
+                  type="checkbox"
+                  checked={allSelected}
+                  onChange={toggleAll}
+                  aria-label="Select all leads on this page"
+                  className="h-4 w-4 accent-blue-600"
+                />
+              </th>
+            )}
             <th className="w-8 pl-3" aria-label="Priority" />
             <th className="px-2">Customer</th>
             <th className="hidden px-2 lg:table-cell">Vehicle</th>
@@ -81,7 +121,7 @@ export function InboxTable({
             !items &&
             Array.from({ length: 10 }).map((_, i) => (
               <tr key={i} className="h-10 border-b border-slate-800" data-testid="inbox-skeleton">
-                <td colSpan={showOwner ? 9 : 8} className="px-3">
+                <td colSpan={(showOwner ? 9 : 8) + (selectable ? 1 : 0)} className="px-3">
                   <Skeleton className="h-4 w-full" />
                 </td>
               </tr>
@@ -93,7 +133,11 @@ export function InboxTable({
               showOwner={showOwner}
               highlighted={highlightedIds.has(item.id)}
               now={now}
-              onOpen={(id) => router.push(`/leads/${id}`)}
+              pending={pendingId === item.id}
+              selectable={selectable}
+              selected={selected.has(item.id)}
+              onToggleSelect={toggle}
+              onOpen={open}
             />
           ))}
         </tbody>

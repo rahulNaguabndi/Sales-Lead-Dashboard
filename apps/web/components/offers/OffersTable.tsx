@@ -22,7 +22,13 @@ import {
   patchOfferRequest,
   type OfferDTO,
 } from './offers-api';
-import { formatDay, STATUS_LABEL, STATUS_STYLE, summarizeEligibility } from './offer-format';
+import {
+  formatDay,
+  isLongValidity,
+  STATUS_LABEL,
+  STATUS_STYLE,
+  summarizeEligibility,
+} from './offer-format';
 import type { OfferEligibilityRules } from '@leaddesk/shared';
 
 type Props = { canManage: boolean; initialOffers: OfferDTO[] };
@@ -66,7 +72,7 @@ export function OffersTable({ canManage, initialOffers }: Props) {
     <div className="space-y-4 p-4 lg:p-6">
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-lg font-semibold">Offers</h2>
+          <h1 className="text-lg font-semibold">Offers</h1>
           <p className="text-sm text-muted-foreground">
             {canManage
               ? 'Create and manage promotions. Reps see active offers on matching leads.'
@@ -126,7 +132,15 @@ export function OffersTable({ canManage, initialOffers }: Props) {
                 </TableCell>
                 <TableCell>{formatOfferValue(o)}</TableCell>
                 <TableCell className="whitespace-nowrap text-sm">
-                  {formatDay(o.validFrom)} - {formatDay(o.validTo)}
+                  {formatDay(o.validFrom)} – {formatDay(o.validTo)}
+                  {isLongValidity(o.validFrom, o.validTo) && (
+                    <span
+                      className="ml-1.5 rounded bg-amber-500/15 px-1.5 py-0.5 text-xs text-amber-400"
+                      title="This offer runs for more than a year. Check the end date."
+                    >
+                      Long validity
+                    </span>
+                  )}
                 </TableCell>
                 <TableCell className="max-w-xs text-sm">
                   {summarizeEligibility(o.eligibility as OfferEligibilityRules)}
@@ -149,33 +163,40 @@ export function OffersTable({ canManage, initialOffers }: Props) {
                     >
                       Edit
                     </Button>
-                    <Button
-                      size="sm"
-                      variant="ghost"
-                      disabled={busyId === o.id}
-                      onClick={() =>
-                        run(
-                          o.id,
-                          () => patchOfferRequest(o.id, { isActive: !o.isActive }),
-                          o.isActive ? 'Offer deactivated' : 'Offer activated',
-                        )
-                      }
-                    >
-                      {o.isActive ? 'Deactivate' : 'Activate'}
-                    </Button>
-                    {o.appliedCount === 0 && (
+                    {/* Expired offers can't be toggled: they are over regardless of the flag. */}
+                    {o.status !== 'EXPIRED' && (
                       <Button
                         size="sm"
                         variant="ghost"
                         disabled={busyId === o.id}
-                        onClick={() => {
-                          if (window.confirm(`Delete "${o.title}"? This cannot be undone.`))
-                            void run(o.id, () => deleteOfferRequest(o.id), 'Offer deleted');
-                        }}
+                        onClick={() =>
+                          run(
+                            o.id,
+                            () => patchOfferRequest(o.id, { isActive: !o.isActive }),
+                            o.isActive ? 'Offer deactivated' : 'Offer activated',
+                          )
+                        }
                       >
-                        Delete
+                        {o.isActive ? 'Deactivate' : 'Activate'}
                       </Button>
                     )}
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      className="text-red-400 hover:bg-red-500/10 hover:text-red-300 disabled:text-slate-600"
+                      disabled={busyId === o.id || o.appliedCount > 0}
+                      title={
+                        o.appliedCount > 0
+                          ? 'Applied offers are kept for reporting. Deactivate it instead.'
+                          : undefined
+                      }
+                      onClick={() => {
+                        if (window.confirm(`Delete "${o.title}"? This cannot be undone.`))
+                          void run(o.id, () => deleteOfferRequest(o.id), 'Offer deleted');
+                      }}
+                    >
+                      Delete
+                    </Button>
                   </TableCell>
                 )}
               </TableRow>

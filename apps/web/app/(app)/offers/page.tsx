@@ -5,6 +5,7 @@ import { listOffers } from '@/server/services/offer-matcher';
 import { OffersTable } from '@/components/offers/OffersTable';
 
 export const dynamic = 'force-dynamic';
+export const metadata = { title: 'Offers' };
 
 /** VP sees and manages every offer; everyone else sees active and scheduled offers read-only. */
 export default async function OffersPage() {

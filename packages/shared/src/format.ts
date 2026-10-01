@@ -28,15 +28,13 @@ export function formatRelative(ms: number, now: number = Date.now()): string {
 
 /** 24-hour date-time, e.g. "30 Sep 2026, 14:32" (UTC unless a timeZone is given). */
 export function formatDateTime(ms: number, timeZone = 'UTC'): string {
-  return new Intl.DateTimeFormat('en-GB', {
-    day: 'numeric',
-    month: 'short',
-    year: 'numeric',
+  const time = new Intl.DateTimeFormat('en-GB', {
     hour: '2-digit',
     minute: '2-digit',
     hourCycle: 'h23',
     timeZone,
   }).format(new Date(ms));
+  return `${formatDate(ms, { timeZone })}, ${time}`;
 }
 
 export function stripDiacritics(s: string): string {
@@ -51,4 +49,36 @@ export function buildCustomerSearchText(c: {
 }): string {
   const text = `${c.firstName} ${c.lastName} ${c.email ?? ''} ${(c.phone ?? '').replace(/\D/g, '')}`;
   return stripDiacritics(text.toLowerCase()).trim();
+}
+
+const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+
+/**
+ * The one date style: "2 Sep 2026" (or "2 Sep" without the year). Accepts unix ms or a
+ * "YYYY-MM-DD" day key. Months are fixed three-letter names, because ICU renders September as
+ * "Sept" in en-GB, which made dates look different from screen to screen.
+ */
+export function formatDate(
+  input: number | string,
+  opts: { year?: boolean; timeZone?: string } = {},
+): string {
+  const { year = true, timeZone = 'UTC' } = opts;
+  let y: number;
+  let m: number;
+  let d: number;
+  if (typeof input === 'string') {
+    const match = /^(\d{4})-(\d{2})-(\d{2})/.exec(input);
+    if (!match) return input;
+    [y, m, d] = [Number(match[1]), Number(match[2]), Number(match[3])];
+  } else {
+    const parts = new Intl.DateTimeFormat('en-CA', {
+      timeZone,
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+    }).formatToParts(new Date(input));
+    const get = (t: string) => Number(parts.find((p) => p.type === t)?.value);
+    [y, m, d] = [get('year'), get('month'), get('day')];
+  }
+  return `${d} ${MONTHS[m - 1]}${year ? ` ${y}` : ''}`;
 }

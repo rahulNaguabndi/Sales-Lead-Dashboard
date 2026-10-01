@@ -10,6 +10,7 @@ export const PUBLIC_PATH_PREFIXES = [
   '/api/intake',
   '/_next',
   '/favicon.ico',
+  '/icon.svg',
 ];
 
 export function isPublicPath(pathname: string): boolean {

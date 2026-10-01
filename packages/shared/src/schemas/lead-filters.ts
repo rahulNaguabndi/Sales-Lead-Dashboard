@@ -34,7 +34,13 @@ export const LeadListQuerySchema = z.object({
   sourceGroup: z.enum(SOURCE_GROUPS).optional(),
   createdFrom: z.string().date().optional(),
   createdTo: z.string().date().optional(),
-  q: z.string().trim().min(2).max(100).optional(),
+  // An empty or 1-character search (e.g. a cleared box) means "no search", never a 400.
+  q: z
+    .string()
+    .trim()
+    .max(100)
+    .optional()
+    .transform((v) => (v && v.length >= 2 ? v : undefined)),
   sort: z
     .enum(['rank', 'newest', 'oldest_untouched', 'next_follow_up', 'score', 'last_activity'])
     .default('rank'),

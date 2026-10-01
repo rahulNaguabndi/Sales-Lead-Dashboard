@@ -49,7 +49,7 @@ function AuditInner({ actors }: { actors: Actor[] }) {
 
   const items = q.data?.pages.flatMap((p) => p.items) ?? [];
   return (
-    <div className="mx-auto max-w-6xl space-y-4 p-6">
+    <div className="space-y-4 p-4 lg:p-6">
       <h1 className="text-xl font-semibold">Audit log</h1>
       <AuditFilterBar value={filters} onChange={onChange} actors={actors} />
       <AuditTable

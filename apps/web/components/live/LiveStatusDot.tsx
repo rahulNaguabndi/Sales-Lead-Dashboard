@@ -4,6 +4,8 @@ import { useLiveState } from '@/lib/sse/useLiveEvents';
 import type { LiveStatus } from '@/lib/sse/liveStore';
 
 const VIEW: Record<LiveStatus, { label: string; dot: string; tip: string }> = {
+  // A fresh page load is not a lost connection: stay quiet instead of flashing "Reconnecting…".
+  connecting: { label: '', dot: 'bg-slate-600', tip: 'Connecting to live updates' },
   live: { label: 'Live', dot: 'bg-emerald-500', tip: 'Receiving live updates' },
   reconnecting: { label: 'Reconnecting…', dot: 'bg-amber-500', tip: 'Connection lost, retrying' },
   offline: { label: 'Offline', dot: 'bg-slate-500', tip: 'Offline: refreshing every 30 s' },
@@ -20,7 +22,11 @@ export function LiveStatusDot() {
       className="flex items-center gap-1.5 text-xs text-slate-400"
     >
       <span aria-hidden className={`h-2 w-2 rounded-full ${v.dot}`} />
-      {v.label}
+      {v.label ? (
+        <span className="hidden sm:inline">{v.label}</span>
+      ) : (
+        <span className="sr-only">{v.tip}</span>
+      )}
     </span>
   );
 }

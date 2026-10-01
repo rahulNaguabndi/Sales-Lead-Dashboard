@@ -1,5 +1,7 @@
 import { expect, test } from '@playwright/test';
-import { signIn } from './helpers';
+import { signIn, preferTableView } from './helpers';
+
+test.beforeEach(async ({ page }) => preferTableView(page));
 
 test.describe('inbox', () => {
   test('rep sees tabs with counts, only own rows, paginated', async ({ page }) => {

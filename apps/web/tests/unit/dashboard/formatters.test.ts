@@ -15,7 +15,11 @@ describe('dashboard formatters', () => {
   it('inverts good/bad when lower is better', () => {
     expect(describeDelta(12, 10, false).good).toBe(true);
     expect(describeDelta(12, 10, true).good).toBe(false);
-    expect(describeDelta(5, null).text).toBe('New');
+    expect(describeDelta(5, null).text).toBe('—');
+    expect(describeDelta(5, null).direction).toBe('none');
+    expect(describeDelta(116.45, 10).text).toBe('+>300%');
+    expect(describeDelta(116.45, 10).lowBase).toBe(true);
+    expect(describeDelta(12, 10).lowBase).toBeUndefined();
     expect(describeDelta(null, 5).direction).toBe('none');
     expect(describeDelta(60, 50, false, 'pct-points').text).toBe('+10.0 pp');
   });

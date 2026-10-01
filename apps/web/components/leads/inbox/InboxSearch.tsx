@@ -49,7 +49,9 @@ export function InboxSearch({
       placeholder="Search name, email, phone, reference…  ( / )"
       aria-label="Search leads"
       data-testid="inbox-search"
-      className="h-9 w-72"
+      // Password managers and extensions inject inline styles into search inputs before hydration.
+      suppressHydrationWarning
+      className="h-9 w-full min-w-0 sm:w-72"
     />
   );
 }

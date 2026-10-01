@@ -20,6 +20,7 @@ export function ConversionByBandChart({ data }: { data: DemographicsResponse }) 
       testId="demographics-conversion"
       title="Conversion by age band"
       insight={data.insights.conversion}
+      rule={`n = closed leads (won + lost). Bands with fewer than ${min} are hidden.`}
       toggle={<ViewToggle view={view} onChange={setView} />}
     >
       {view === 'chart' ? (
@@ -29,7 +30,7 @@ export function ConversionByBandChart({ data }: { data: DemographicsResponse }) 
               <div
                 className="pointer-events-none absolute left-0 right-0 border-t border-dashed border-slate-400"
                 style={{ top: avgTop }}
-                title={`Organization average ${data.orgConversionPct}%`}
+                title={`Average across all age bands ${data.orgConversionPct}%`}
               />
             )}
             {data.conversion.map((c) => (
@@ -45,7 +46,10 @@ export function ConversionByBandChart({ data }: { data: DemographicsResponse }) 
                     <span className="text-xs font-medium">{c.conversionPct}%</span>
                     <div
                       className="w-full rounded-t"
-                      style={{ height: Math.max(2, (c.conversionPct / max) * H), background: BAR_COLOR.light }}
+                      style={{
+                        height: Math.max(2, (c.conversionPct / max) * H),
+                        background: BAR_COLOR.light,
+                      }}
                       title={`${c.band}: ${c.won} won of ${c.closed} closed (${c.conversionPct}%)`}
                     />
                   </>
@@ -63,7 +67,7 @@ export function ConversionByBandChart({ data }: { data: DemographicsResponse }) 
           </div>
           {data.orgConversionPct != null && (
             <p className="mt-2 text-xs text-muted-foreground">
-              Dashed line: organization average {data.orgConversionPct}%
+              Dashed line: average across all age bands in this view, {data.orgConversionPct}%
             </p>
           )}
         </div>

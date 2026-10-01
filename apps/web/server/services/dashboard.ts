@@ -401,14 +401,22 @@ export async function getFunnel(
   const rf = await resolveFilters(ctx, filters, deps);
   const p = rf.period;
   const inPeriod = sql`${rf.where} AND leads.created_at BETWEEN ${p.from} AND ${p.to}`;
-  const stages = FUNNEL_STAGES.map((stage) => {
+  // Cohort funnel: leads created in the period, counted at every stage up to the furthest one
+  // they reached. A lead that skipped a stage (e.g. Qualified → Negotiation) still counts as
+  // having passed it, so the funnel is monotonic by construction.
+  const stages = FUNNEL_STAGES.map((stage, i) => {
+    const atOrBeyond = sql.join(
+      FUNNEL_STAGES.slice(i).map((s) => sql`${s}`),
+      sql`, `,
+    );
     const reached =
       stage === 'NEW'
         ? database.all<{ n: number }>(sql`SELECT COUNT(*) AS n FROM leads WHERE ${inPeriod}`)[0]?.n
         : database.all<{ n: number }>(sql`
             SELECT COUNT(*) AS n FROM leads
-            WHERE ${inPeriod} AND (leads.stage = ${stage}
-              OR EXISTS (SELECT 1 FROM stage_history sh WHERE sh.lead_id = leads.id AND sh.to_stage = ${stage}))
+            WHERE ${inPeriod} AND (leads.stage IN (${atOrBeyond})
+              OR EXISTS (SELECT 1 FROM stage_history sh
+                         WHERE sh.lead_id = leads.id AND sh.to_stage IN (${atOrBeyond})))
           `)[0]?.n;
     const current =
       database.all<{ n: number }>(

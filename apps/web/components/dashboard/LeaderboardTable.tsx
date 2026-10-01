@@ -1,6 +1,7 @@
 'use client';
 
 import Link from 'next/link';
+import { AlertTriangle, Timer } from 'lucide-react';
 import { useMemo, useState } from 'react';
 import type { DashboardFilters, DashboardPeriod, LeaderboardRow, TeamRow } from '@leaddesk/shared';
 import { buildInboxHref } from '@/lib/dashboard-href';
@@ -36,9 +37,19 @@ type Props = {
   filters: DashboardFilters;
   period: DashboardPeriod;
   highlightId?: string;
+  /** Team mode: selecting a row drills into that team. */
+  onSelectRow?: (id: string) => void;
 };
 
-export function LeaderboardTable({ title, rows, mode, filters, period, highlightId }: Props) {
+export function LeaderboardTable({
+  title,
+  rows,
+  mode,
+  filters,
+  period,
+  highlightId,
+  onSelectRow,
+}: Props) {
   const [sort, setSort] = useState<{ key: ColKey; dir: 1 | -1 }>({ key: 'newInPeriod', dir: -1 });
   const sorted = useMemo(
     () =>
@@ -93,7 +104,18 @@ export function LeaderboardTable({ title, rows, mode, filters, period, highlight
               data-testid={`row-${r.name}`}
             >
               <th scope="row" className="py-1 pr-3 text-left font-medium">
-                {r.name}
+                {onSelectRow ? (
+                  <button
+                    type="button"
+                    className="text-left underline-offset-2 hover:underline"
+                    aria-pressed={idOf(r) === highlightId}
+                    onClick={() => onSelectRow(idOf(r))}
+                  >
+                    {r.name}
+                  </button>
+                ) : (
+                  r.name
+                )}
               </th>
               {COLS.map((c) => {
                 const cell = c.fmt(r);
@@ -110,8 +132,12 @@ export function LeaderboardTable({ title, rows, mode, filters, period, highlight
                     data-testid={`cell-${r.name}-${c.key}`}
                   >
                     {href ? (
-                      <Link href={href} className="underline">
-                        {c.key === 'overdue' ? '⚠ ' : '⏱ '}
+                      <Link href={href} className="inline-flex items-center gap-1 underline">
+                        {c.key === 'overdue' ? (
+                          <AlertTriangle aria-hidden className="h-3.5 w-3.5 text-amber-400" />
+                        ) : (
+                          <Timer aria-hidden className="h-3.5 w-3.5 text-red-400" />
+                        )}
                         {cell}
                       </Link>
                     ) : (

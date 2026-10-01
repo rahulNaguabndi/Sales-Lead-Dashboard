@@ -3,7 +3,12 @@
 import Link from 'next/link';
 import { useState } from 'react';
 import { formatDateTime, formatRelative } from '@/lib/format';
+import { roleLabel } from '@leaddesk/shared';
 import type { AuditItemDto } from './types';
+import { actionLabel, actionTone } from './labels';
+
+const localTz = () =>
+  typeof Intl !== 'undefined' ? Intl.DateTimeFormat().resolvedOptions().timeZone : 'UTC';
 import { DiffPanel } from './DiffPanel';
 
 function ActorCell({ actor }: { actor: AuditItemDto['actor'] }) {
@@ -16,7 +21,7 @@ function ActorCell({ actor }: { actor: AuditItemDto['actor'] }) {
   }
   return (
     <span>
-      {actor.name} <span className="text-xs text-muted-foreground">{actor.role}</span>
+      {actor.name} <span className="text-xs text-muted-foreground">{roleLabel(actor.role)}</span>
     </span>
   );
 }
@@ -31,13 +36,25 @@ export function AuditRow({ item }: { item: AuditItemDto }) {
         onClick={() => setOpen((o) => !o)}
         data-testid="audit-row"
       >
-        <td className="whitespace-nowrap p-2" title={formatDateTime(item.createdAt)}>
-          {formatRelative(item.createdAt)}
+        <td className="whitespace-nowrap p-2">
+          <time dateTime={new Date(item.createdAt).toISOString()}>
+            {formatRelative(item.createdAt)}
+            <span className="block text-xs text-muted-foreground">
+              {formatDateTime(item.createdAt, localTz())}
+            </span>
+          </time>
         </td>
         <td className="p-2">
           <ActorCell actor={item.actor} />
         </td>
-        <td className="p-2 font-mono text-xs">{item.action}</td>
+        <td className="p-2">
+          <span
+            title={item.action}
+            className={`whitespace-nowrap rounded-full px-2 py-0.5 text-xs ${actionTone(item.action)}`}
+          >
+            {actionLabel(item.action)}
+          </span>
+        </td>
         <td className="p-2">
           {href ? (
             <Link href={href} className="underline" onClick={(e) => e.stopPropagation()}>

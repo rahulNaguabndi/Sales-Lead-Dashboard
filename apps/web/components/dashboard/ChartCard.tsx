@@ -5,6 +5,8 @@ import type { UseQueryResult } from '@tanstack/react-query';
 
 type Props<T> = {
   title: string;
+  /** One line saying what is counted, so similar numbers on other screens can be reconciled. */
+  subtitle?: string;
   query: UseQueryResult<T>;
   isEmpty?: (data: T) => boolean;
   /** Accessible table alternative to the chart. */
@@ -13,7 +15,7 @@ type Props<T> = {
 };
 
 /** Card shell with loading skeleton, empty state, inline error + Retry, and View-as-table toggle. */
-export function ChartCard<T>({ title, query, isEmpty, table, children }: Props<T>) {
+export function ChartCard<T>({ title, subtitle, query, isEmpty, table, children }: Props<T>) {
   const [asTable, setAsTable] = useState(false);
   const { data, isLoading, isError, refetch } = query;
   return (
@@ -23,7 +25,10 @@ export function ChartCard<T>({ title, query, isEmpty, table, children }: Props<T
       data-testid={`widget-${title.toLowerCase().replace(/\W+/g, '-')}`}
     >
       <header className="mb-3 flex items-center justify-between">
-        <h3 className="text-sm font-semibold">{title}</h3>
+        <div>
+          <h3 className="text-sm font-semibold">{title}</h3>
+          {subtitle && <p className="text-xs text-muted-foreground">{subtitle}</p>}
+        </div>
         {table && data && (
           <button
             type="button"

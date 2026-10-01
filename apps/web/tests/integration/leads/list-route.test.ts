@@ -65,6 +65,25 @@ describe('GET /api/leads', () => {
     for (const i of body.items) expect(i.owner === null || i.owner.id === myId).toBe(true);
   });
 
+  it('REP asking for the team view gets only their own work, never a teammate lead (P0-1)', async () => {
+    const mine = await (await get('?pageSize=50')).json();
+    const myId = mine.items[0].owner.id;
+    for (const qs of ['?view=team&pageSize=50', '?view=all&pageSize=50']) {
+      const res = await get(qs);
+      expect(res.status, qs).toBe(200);
+      const body = await res.json();
+      expect(body.view, qs).toBe('mine');
+      for (const i of body.items) expect(i.owner?.id, qs).toBe(myId);
+    }
+  });
+
+  it('an empty or 1-character search is ignored, not a 400', async () => {
+    for (const qs of ['?q=', '?q=a', '?q=%20%20']) {
+      const res = await get(qs);
+      expect(res.status, qs).toBe(200);
+    }
+  });
+
   it('pages cover every lead once (SC-005)', async () => {
     const first = await (await get('?pageSize=10')).json();
     const ids = new Set<string>();

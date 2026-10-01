@@ -16,7 +16,6 @@ import type {
 import { apiFetch } from '@/lib/api-client';
 import { buildInboxHref } from '@/lib/dashboard-href';
 import { useLivePollingInterval } from '@/lib/sse/useLiveEvents';
-import { LiveStatusDot } from '@/components/live/LiveStatusDot';
 import './palette.css';
 import { ChartCard } from './ChartCard';
 import {
@@ -38,7 +37,7 @@ import { formatDuration, formatEur, formatInt, formatPct } from './formatters';
 import { KpiTile, StatStrip } from './KpiTiles';
 import { LeaderboardTable } from './LeaderboardTable';
 import { useDashboardFilters } from './useDashboardFilters';
-import { tabsFor } from './tabs';
+import { DashboardTabs } from './DashboardTabs';
 
 export type DashboardLayout = 'rep' | 'manager' | 'vp';
 type Props = {
@@ -79,8 +78,6 @@ export function DashboardView({ layout, teams, reps }: Props) {
   const { filters, setFilters, query } = useDashboardFilters();
   const isVp = layout === 'vp';
   const isRep = layout === 'rep';
-  const tabs = tabsFor(layout);
-  const [tab, setTab] = useState(tabs[0]?.id ?? 'overview');
 
   const summary = useDash<SummaryResponse>('summary', query);
   const leader = useDash<LeaderboardResponse>(
@@ -106,7 +103,6 @@ export function DashboardView({ layout, teams, reps }: Props) {
         <h1 className="text-xl font-semibold">Dashboard</h1>
         <div className="flex items-center gap-3">
           <UpdatedAgo at={s?.generatedAt} />
-          <LiveStatusDot />
         </div>
       </div>
 
@@ -117,27 +113,7 @@ export function DashboardView({ layout, teams, reps }: Props) {
         reps={isRep ? undefined : reps}
       />
 
-      {tabs.length > 1 && (
-        <div role="tablist" className="flex gap-2 border-b">
-          {tabs.map((t) =>
-            t.href ? (
-              <a key={t.id} href={t.href} role="tab" aria-selected={false} className="px-3 py-1 text-sm">
-                {t.label}
-              </a>
-            ) : (
-            <button
-              key={t.id}
-              role="tab"
-              aria-selected={tab === t.id}
-              className={`px-3 py-1 text-sm ${tab === t.id ? 'border-b-2 border-primary font-medium' : ''}`}
-              onClick={() => setTab(t.id)}
-            >
-              {t.label}
-            </button>
-            ),
-          )}
-        </div>
-      )}
+      <DashboardTabs layout={layout} />
 
       {summary.isError ? (
         <div role="alert" className="text-sm">
@@ -181,7 +157,12 @@ export function DashboardView({ layout, teams, reps }: Props) {
       ) : (
         <div className="space-y-4">
           {isVp && (
-            <ChartCard title="Team comparison" query={teamCmp} isEmpty={(d) => d.rows.length === 0}>
+            <ChartCard
+              title="Team comparison"
+              subtitle="Select a team to see its rep leaderboard"
+              query={teamCmp}
+              isEmpty={(d) => d.rows.length === 0}
+            >
               {(d) => (
                 <LeaderboardTable
                   title="Team comparison"
@@ -190,13 +171,19 @@ export function DashboardView({ layout, teams, reps }: Props) {
                   filters={filters}
                   period={d.period}
                   highlightId={filters.teamId}
+                  onSelectRow={(teamId) =>
+                    setFilters({
+                      ...filters,
+                      teamId: filters.teamId === teamId ? undefined : teamId,
+                    })
+                  }
                 />
               )}
             </ChartCard>
           )}
           {isVp && !filters.teamId ? (
             <p className="text-sm text-muted-foreground">
-              Select a team to see its rep leaderboard.
+              Select a team in the table above, or in the team filter, to see its rep leaderboard.
             </p>
           ) : (
             <ChartCard title="Rep leaderboard" query={leader} isEmpty={(d) => d.rows.length === 0}>
@@ -215,6 +202,7 @@ export function DashboardView({ layout, teams, reps }: Props) {
             <FunnelCard funnel={funnel} filters={filters} />
             <ChartCard
               title="Stage aging"
+              subtitle="Average days open leads spend in each stage"
               query={aging}
               table={(d) => <StageAgingTable data={d} />}
             >
@@ -222,6 +210,7 @@ export function DashboardView({ layout, teams, reps }: Props) {
             </ChartCard>
             <ChartCard
               title="Leads over time"
+              subtitle="New leads by source group"
               query={overTime}
               isEmpty={(d) => d.rows.every((r) => r.total === 0)}
               table={(d) => <LeadsOverTimeTable data={d} />}
@@ -230,6 +219,7 @@ export function DashboardView({ layout, teams, reps }: Props) {
             </ChartCard>
             <ChartCard
               title="Source performance"
+              subtitle="Leads and win rate by source"
               query={sources}
               isEmpty={(d) => d.rows.length === 0}
               table={(d) => <SourcesTable data={d} />}
@@ -261,6 +251,7 @@ function FunnelCard({
   return (
     <ChartCard
       title="Funnel"
+      subtitle="Leads created in this period, by the furthest stage they reached"
       query={funnel}
       isEmpty={(d) => d.stages.every((x) => x.reached === 0)}
       table={(d) => <FunnelTable data={d} />}

@@ -4,7 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { formatPhone } from './format';
 import type { LeadDetail } from './types';
 
-const label = (s: string) => s.charAt(0) + s.slice(1).toLowerCase().replace(/_/g, ' ');
+import { channelLabel, humanize, languageLabel } from '@leaddesk/shared';
 const dash = (v: string | null | undefined) => (v ? v : '—');
 
 function Row({ name, children }: { name: string; children: ReactNode }) {
@@ -35,17 +35,17 @@ export function CustomerCard({
           <Row name="Email">{dash(customer.email)}</Row>
           <Row name="Location">{dash(place)}</Row>
           <Row name="Age band">{customer.ageBand === 'UNKNOWN' ? '—' : customer.ageBand}</Row>
-          <Row name="Language">{customer.language.toUpperCase()}</Row>
+          <Row name="Language">{languageLabel(customer.language)}</Row>
           <Row name="Preferred channel">
             <span className="inline-flex items-center gap-1">
               <Star aria-hidden className="h-3 w-3 fill-amber-400 text-amber-400" />
-              {label(customer.preferredChannel)}
+              {channelLabel(customer.preferredChannel)}
             </span>
           </Row>
           <Row name="Secondary">
-            {customer.secondaryChannel ? label(customer.secondaryChannel) : '—'}
+            {customer.secondaryChannel ? channelLabel(customer.secondaryChannel) : '—'}
           </Row>
-          <Row name="Best time">{label(customer.bestTime)}</Row>
+          <Row name="Best time">{humanize(customer.bestTime)}</Row>
         </dl>
         {extras}
       </CardContent>

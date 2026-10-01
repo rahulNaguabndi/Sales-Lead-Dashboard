@@ -6,8 +6,17 @@ import { leadSlots, type LeadSlots } from './slots';
 import type { LeadDetail, LeadSlotProps } from './types';
 
 vi.mock('next/navigation', () => ({ useRouter: () => ({ refresh: () => undefined }) }));
-vi.mock('@tanstack/react-query', () => ({
+vi.mock('@tanstack/react-query', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('@tanstack/react-query')>()),
   useQueryClient: () => ({ invalidateQueries: () => Promise.resolve() }),
+  useQuery: () => ({ data: undefined, isPending: true, isSuccess: false, isError: false }),
+  useInfiniteQuery: () => ({
+    data: undefined,
+    isPending: true,
+    isError: false,
+    isFetching: false,
+    hasNextPage: false,
+  }),
 }));
 
 const detail: LeadDetail = {

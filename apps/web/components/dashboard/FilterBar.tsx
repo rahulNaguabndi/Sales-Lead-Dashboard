@@ -1,7 +1,12 @@
 'use client';
 
 import { useState } from 'react';
-import { DASHBOARD_RANGES, SOURCE_GROUPS, type DashboardFilters } from '@leaddesk/shared';
+import {
+  DASHBOARD_RANGES,
+  SOURCE_GROUPS,
+  sourceGroupLabel,
+  type DashboardFilters,
+} from '@leaddesk/shared';
 
 const LABELS: Record<string, string> = {
   today: 'Today',
@@ -119,7 +124,7 @@ export function FilterBar({ filters, setFilters, teams, reps }: Props) {
         <option value="">All sources</option>
         {SOURCE_GROUPS.map((g) => (
           <option key={g} value={g}>
-            {g}
+            {sourceGroupLabel(g)}
           </option>
         ))}
       </select>

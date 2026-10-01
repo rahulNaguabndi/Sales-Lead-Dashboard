@@ -2,7 +2,15 @@
 
 import { useState } from 'react';
 import { toast } from 'sonner';
-import { BEST_TIMES, CHANNELS, LANGUAGES, type BestTime, type Channel } from '@leaddesk/shared';
+import {
+  BEST_TIMES,
+  CHANNELS,
+  LANGUAGES,
+  humanize,
+  languageLabel,
+  type BestTime,
+  type Channel,
+} from '@leaddesk/shared';
 import { Button } from '@/components/ui/button';
 import {
   Dialog,
@@ -17,7 +25,6 @@ import { apiFetch } from '@/lib/api-client';
 import type { LeadSlotProps } from '@/components/leads/detail/types';
 import { CHANNEL_LABEL } from '@/components/leads/channels/channel-actions';
 
-const nice = (s: string) => s.charAt(0) + s.slice(1).toLowerCase();
 const selectCls =
   'w-full rounded-md border border-input bg-background px-2 py-1.5 text-sm text-foreground';
 
@@ -129,7 +136,7 @@ export function EditPreferencesDialog({
             >
               {BEST_TIMES.map((t) => (
                 <option key={t} value={t}>
-                  {nice(t)}
+                  {humanize(t)}
                 </option>
               ))}
             </select>
@@ -143,7 +150,7 @@ export function EditPreferencesDialog({
             >
               {LANGUAGES.map((l) => (
                 <option key={l} value={l}>
-                  {l.toUpperCase()}
+                  {languageLabel(l)}
                 </option>
               ))}
             </select>

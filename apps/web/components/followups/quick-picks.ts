@@ -1,3 +1,5 @@
+import { formatDate, localTimeZone } from '@/lib/format';
+
 export const FOLLOW_UP_PICKS = [
   { key: 'in2h', label: 'In 2 h' },
   { key: 'tomorrow10', label: 'Tomorrow 10:00' },
@@ -26,7 +28,9 @@ export function resolveFollowUpPick(key: FollowUpPickKey, now: Date = new Date()
 
 /** Snooze choices: +1 h, tomorrow 10:00, or a custom time picked by the user. */
 export function resolveSnooze(key: 'plus1h' | 'tomorrow', now: Date = new Date()): Date {
-  return key === 'plus1h' ? new Date(now.getTime() + 3_600_000) : resolveFollowUpPick('tomorrow10', now);
+  return key === 'plus1h'
+    ? new Date(now.getTime() + 3_600_000)
+    : resolveFollowUpPick('tomorrow10', now);
 }
 
 /** "18:00" for today's items, "2 h overdue" for past ones, weekday + time otherwise. */
@@ -42,11 +46,15 @@ export function formatDueLabel(dueAt: number, now: number = Date.now()): string 
   const today = new Date(now);
   const time = d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false });
   if (d.toDateString() === today.toDateString()) return time;
-  return `${d.toLocaleDateString([], { weekday: 'short', day: 'numeric', month: 'short' })} ${time}`;
+  const weekday = d.toLocaleDateString('en-GB', { weekday: 'short' });
+  return `${weekday} ${formatDate(dueAt, { year: false, timeZone: localTimeZone() })} ${time}`;
 }
 
 /** The composer pre-ticks "Complete follow-up" when one is due within ±24 h or overdue. */
-export function defaultCompleteChecked(followUp: { dueAt: number } | null, now: number = Date.now()): boolean {
+export function defaultCompleteChecked(
+  followUp: { dueAt: number } | null,
+  now: number = Date.now(),
+): boolean {
   if (!followUp) return false;
   return followUp.dueAt <= now + 24 * 3_600_000;
 }

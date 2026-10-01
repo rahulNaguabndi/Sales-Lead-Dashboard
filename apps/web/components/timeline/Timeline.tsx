@@ -1,6 +1,7 @@
 'use client';
 
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useEffect, useState } from 'react';
+import { useInfiniteQuery, type InfiniteData } from '@tanstack/react-query';
 import type {
   ActivityItem,
   ActivityKindFilter,
@@ -41,66 +42,57 @@ export function groupByDay(items: ActivityItem[]): { key: number; items: Activit
   return groups;
 }
 
-/** Server-rendered first page (newest first, all kinds) hydrates the feed; later pages load on demand. */
+/** Query key prefix shared with the composer's optimistic insert and F12's activity.created. */
+export const activitiesKey = (leadId: string) => ['lead', leadId, 'activities'] as const;
+
+/**
+ * Server-rendered first page (newest first, all kinds) hydrates the feed; later pages load on
+ * demand. The feed lives in TanStack Query so a logged activity appears immediately (optimistic
+ * insert) and live events refresh it without a reload.
+ */
 export function Timeline({ leadId, initial }: { leadId: string; initial: ActivityPage }) {
   const [order, setOrder] = useState<ActivityOrder>('desc');
   const [kind, setKind] = useState<ActivityKindFilter>('ALL');
-  const [items, setItems] = useState<ActivityItem[]>(initial.items);
-  const [cursor, setCursor] = useState<string | null>(initial.nextCursor);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const seq = useRef(0);
-  const first = useRef(true);
+  const isInitialView = order === 'desc' && kind === 'ALL';
 
-  const load = useCallback(
-    async (o: ActivityOrder, k: ActivityKindFilter, from: string | null) => {
-      const mine = ++seq.current;
-      setLoading(true);
-      setError(null);
-      try {
-        const page = await fetchPage(leadId, o, k, from);
-        if (mine !== seq.current) return;
-        setItems((prev) => (from ? [...prev, ...page.items] : page.items));
-        setCursor(page.nextCursor);
-      } catch (e) {
-        if (mine === seq.current) setError(e instanceof Error ? e.message : 'Failed to load');
-      } finally {
-        if (mine === seq.current) setLoading(false);
-      }
-    },
-    [leadId],
-  );
+  const query = useInfiniteQuery({
+    queryKey: [...activitiesKey(leadId), { order, kind }],
+    queryFn: ({ pageParam }) => fetchPage(leadId, order, kind, pageParam),
+    initialPageParam: null as string | null,
+    getNextPageParam: (last) => last.nextCursor,
+    initialData: isInitialView
+      ? ({ pages: [initial], pageParams: [null] } satisfies InfiniteData<
+          ActivityPage,
+          string | null
+        >)
+      : undefined,
+    staleTime: 5_000,
+  });
 
-  // Order preference is read after mount so the server render never mismatches.
+  // Newest first, always, on every visit: the latest touch is what a rep needs to see. "Oldest
+  // first" is a per-view toggle and is no longer remembered (a stale stored "asc" made every lead
+  // open with the latest activity at the bottom), so drop any old stored preference.
   useEffect(() => {
-    const stored = window.localStorage.getItem(ORDER_STORAGE_KEY);
-    if (stored === 'asc') setOrder('asc');
+    try {
+      window.localStorage.removeItem(ORDER_STORAGE_KEY);
+    } catch {
+      // Storage unavailable: nothing to clean up.
+    }
   }, []);
 
-  useEffect(() => {
-    // The first render already has the server page (desc, ALL).
-    if (first.current && order === 'desc' && kind === 'ALL') {
-      first.current = false;
-      return;
-    }
-    first.current = false;
-    void load(order, kind, null);
-  }, [order, kind, load]);
+  const changeOrder = (o: ActivityOrder) => setOrder(o);
 
-  const changeOrder = (o: ActivityOrder) => {
-    window.localStorage.setItem(ORDER_STORAGE_KEY, o);
-    setOrder(o);
-  };
-
+  const items = query.data?.pages.flatMap((p) => p.items) ?? [];
   const groups = groupByDay(items);
+  const loading = query.isFetching;
 
   return (
     <section aria-label="Timeline" className="space-y-3">
       <TimelineControls order={order} kind={kind} onOrder={changeOrder} onKind={setKind} />
       <ul role="feed" aria-busy={loading} aria-label="Lead activity" className="space-y-3">
-        {loading && items.length === 0 ? (
+        {query.isPending ? (
           Array.from({ length: 5 }, (_, i) => <Skeleton key={i} className="h-14 w-full" />)
-        ) : groups.length === 0 && !error ? (
+        ) : groups.length === 0 && !query.isError ? (
           <li className="py-8 text-center text-sm text-muted-foreground">No activity yet</li>
         ) : (
           groups.map((g) => (
@@ -116,20 +108,20 @@ export function Timeline({ leadId, initial }: { leadId: string; initial: Activit
           ))
         )}
       </ul>
-      {error && (
+      {query.isError && (
         <div role="alert" className="flex items-center gap-2 text-sm text-red-400">
           Couldn&apos;t load activity.
-          <Button size="sm" variant="outline" onClick={() => void load(order, kind, cursor)}>
+          <Button size="sm" variant="outline" onClick={() => void query.refetch()}>
             Retry
           </Button>
         </div>
       )}
-      {cursor && !error && (
+      {query.hasNextPage && !query.isError && (
         <Button
           variant="outline"
           size="sm"
-          disabled={loading}
-          onClick={() => void load(order, kind, cursor)}
+          disabled={query.isFetchingNextPage}
+          onClick={() => void query.fetchNextPage()}
         >
           {order === 'desc' ? 'Load older' : 'Load newer'}
         </Button>

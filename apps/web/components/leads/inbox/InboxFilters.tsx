@@ -1,10 +1,18 @@
 'use client';
 
-import { LEAD_SOURCES, PRIORITIES, STAGES } from '@leaddesk/shared';
+import {
+  LEAD_SOURCES,
+  PRIORITIES,
+  STAGES,
+  priorityLabel,
+  sourceGroupLabel,
+  sourceLabel,
+  stageLabel,
+  formatDate,
+} from '@leaddesk/shared';
 import { Button } from '@/components/ui/button';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { activeFilterKeys, csvValues, toggleCsv, type InboxParams } from './inbox-params';
-import { sourceLabel } from './SourceBadge';
 
 type Patch = Record<string, string | undefined>;
 
@@ -40,6 +48,11 @@ function CheckGroup({
 }
 
 const FLAG_LABELS: Record<string, string> = {
+  team: 'Team',
+  owner: 'Owner',
+  stage: 'Stage',
+  source: 'Source',
+  priority: 'Priority',
   returning: 'Returning',
   overdue: 'Overdue',
   closed: 'Closed shown',
@@ -50,7 +63,19 @@ const FLAG_LABELS: Record<string, string> = {
   q: 'Search',
 };
 
-function chipLabel(key: string, value: string, owners: { id: string; name: string }[]): string {
+const dayLabel = (iso: string) => formatDate(iso);
+
+type Named = { id: string; name: string };
+
+function chipLabel(key: string, value: string, owners: Named[], teams: Named[]): string {
+  if (key === 'team') {
+    return `Team: ${csvValues(value)
+      .map((v) => teams.find((t) => t.id === v)?.name ?? 'Other team')
+      .join(', ')}`;
+  }
+  if (key === 'sourceGroup') return `Source: ${sourceGroupLabel(value)}`;
+  if (key === 'createdFrom' || key === 'createdTo')
+    return `${FLAG_LABELS[key]}: ${dayLabel(value)}`;
   if (key === 'owner') {
     return `Owner: ${csvValues(value)
       .map((v) => (v === 'unassigned' ? 'Unassigned' : (owners.find((o) => o.id === v)?.name ?? v)))
@@ -61,7 +86,8 @@ function chipLabel(key: string, value: string, owners: { id: string; name: strin
       .map((s) => sourceLabel(s as never))
       .join(', ')}`;
   if (key === 'stage' || key === 'priority') {
-    return `${key === 'stage' ? 'Stage' : 'Priority'}: ${csvValues(value).join(', ')}`;
+    const label = key === 'stage' ? stageLabel : priorityLabel;
+    return `${key === 'stage' ? 'Stage' : 'Priority'}: ${csvValues(value).map(label).join(', ')}`;
   }
   const base = FLAG_LABELS[key] ?? key;
   return value === 'true' || value === 'breached' ? base : `${base}: ${value}`;
@@ -71,12 +97,15 @@ export function InboxFilters({
   leader,
   params,
   owners,
+  teams = [],
   onPatch,
   onClear,
 }: {
   leader: boolean;
   params: InboxParams;
   owners: { id: string; name: string }[];
+  /** Teams in scope, so a dashboard drill-down chip reads "Team: Team DACH", not an id. */
+  teams?: { id: string; name: string }[];
   onPatch: (patch: Patch) => void;
   onClear: () => void;
 }) {
@@ -95,7 +124,7 @@ export function InboxFilters({
         <PopoverContent align="start" className="w-96 space-y-3">
           <CheckGroup
             legend="Stage"
-            options={STAGES.map((s) => ({ value: s, label: s.replace('_', ' ') }))}
+            options={STAGES.map((s) => ({ value: s, label: stageLabel(s) }))}
             selected={csvValues(params.stage)}
             onToggle={(v) => onPatch({ stage: toggleCsv(params.stage, v) })}
           />
@@ -107,7 +136,7 @@ export function InboxFilters({
           />
           <CheckGroup
             legend="Priority"
-            options={PRIORITIES.map((p) => ({ value: p, label: p }))}
+            options={PRIORITIES.map((p) => ({ value: p, label: priorityLabel(p) }))}
             selected={csvValues(params.priority)}
             onToggle={(v) => onPatch({ priority: toggleCsv(params.priority, v) })}
           />
@@ -174,7 +203,7 @@ export function InboxFilters({
           data-testid={`chip-filter-${key}`}
           className="inline-flex items-center gap-1 rounded-full bg-slate-800 px-2 py-0.5 text-xs"
         >
-          {chipLabel(key, params[key]!, owners)}
+          {chipLabel(key, params[key]!, owners, teams)}
           <button
             type="button"
             aria-label={`Remove ${FLAG_LABELS[key] ?? key} filter`}
