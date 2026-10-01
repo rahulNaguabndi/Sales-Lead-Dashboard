@@ -15,6 +15,7 @@ import { activeFilterKeys, toQueryString } from './inbox-params';
 import { InboxFilters } from './InboxFilters';
 import { InboxSearch } from './InboxSearch';
 import { InboxTable } from './InboxTable';
+import { KanbanBoard } from './KanbanBoard';
 import { InboxTabs, type TabCaps } from './InboxTabs';
 import { DueTodayWidget } from '@/components/followups/due-today-widget';
 import { StatChips, type StatChipKey } from './StatChips';
@@ -38,11 +39,15 @@ type Props = {
 
 function Inbox({ caps, initialData, initialKey, owners }: Props) {
   const { params, patch, clear } = useInboxParams();
-  const qs = toQueryString(params);
+  const [viewMode, setViewMode] = useState<'table' | 'board'>('table');
+
+  const effectiveParams =
+    viewMode === 'board' ? { ...params, pageSize: '50' } : params;
+  const qs = toQueryString(effectiveParams);
 
   // Query key contract for F12: prefix ['leads'] is invalidated on lead.* events.
   const query = useQuery({
-    queryKey: ['leads', params],
+    queryKey: ['leads', effectiveParams],
     queryFn: async (): Promise<LeadListResult> => {
       const tz = Intl.DateTimeFormat().resolvedOptions().timeZone;
       const sp = new URLSearchParams(qs);
@@ -86,6 +91,65 @@ function Inbox({ caps, initialData, initialKey, owners }: Props) {
           />
         )}
         <div className="flex items-center gap-2">
+          <div
+            className="flex rounded-md border border-slate-700"
+            role="group"
+            aria-label="View mode"
+          >
+            <button
+              aria-label="Table view"
+              aria-pressed={viewMode === 'table'}
+              onClick={() => setViewMode('table')}
+              className={`flex h-9 items-center rounded-l-md px-2.5 text-sm transition-colors ${
+                viewMode === 'table'
+                  ? 'bg-slate-700 text-slate-100'
+                  : 'text-slate-400 hover:text-slate-200'
+              }`}
+            >
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                width="16"
+                height="16"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                aria-hidden
+              >
+                <path d="M3 3h18v18H3z" />
+                <path d="M3 9h18M3 15h18M9 3v18" />
+              </svg>
+            </button>
+            <button
+              aria-label="Board view"
+              aria-pressed={viewMode === 'board'}
+              onClick={() => setViewMode('board')}
+              className={`flex h-9 items-center rounded-r-md px-2.5 text-sm transition-colors ${
+                viewMode === 'board'
+                  ? 'bg-slate-700 text-slate-100'
+                  : 'text-slate-400 hover:text-slate-200'
+              }`}
+            >
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                width="16"
+                height="16"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                aria-hidden
+              >
+                <rect x="3" y="3" width="5" height="18" rx="1" />
+                <rect x="10" y="3" width="5" height="12" rx="1" />
+                <rect x="17" y="3" width="5" height="15" rx="1" />
+              </svg>
+            </button>
+          </div>
           <InboxSearch value={params.q ?? ''} onChange={(q) => patch({ q })} />
           <select
             aria-label="Sort"
@@ -112,17 +176,21 @@ function Inbox({ caps, initialData, initialKey, owners }: Props) {
         onClear={clear}
       />
 
-      <InboxTable
-        items={data?.items}
-        loading={query.isPending}
-        error={query.isError}
-        onRetry={() => query.refetch()}
-        showOwner={data?.view !== 'mine'}
-        emptyKind={emptyKind}
-        onEmptyAction={() => (emptyKind === 'filtered' ? clear() : patch({ view: 'unassigned' }))}
-      />
+      {viewMode === 'board' ? (
+        <KanbanBoard items={data?.items} loading={query.isPending} />
+      ) : (
+        <InboxTable
+          items={data?.items}
+          loading={query.isPending}
+          error={query.isError}
+          onRetry={() => query.refetch()}
+          showOwner={data?.view !== 'mine'}
+          emptyKind={emptyKind}
+          onEmptyAction={() => (emptyKind === 'filtered' ? clear() : patch({ view: 'unassigned' }))}
+        />
+      )}
 
-      {data && data.total > 0 && (
+      {viewMode === 'table' && data && data.total > 0 && (
         <nav
           aria-label="Pagination"
           className="flex items-center justify-end gap-3 text-xs text-slate-400"

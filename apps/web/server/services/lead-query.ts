@@ -116,7 +116,13 @@ function buildWhere(
   p: NormalizedParams,
   now: number,
 ): SQL {
-  const where: SQL[] = [leadScopeWhere(scope)];
+  // For the 'team' view, non-leaders see all leads in their team (not just their own).
+  const baseScope =
+    p.view === 'team' && !caps.leader && scope.teamIds.size > 0
+      ? sql`leads.team_id IN (${list([...scope.teamIds])})`
+      : leadScopeWhere(scope);
+
+  const where: SQL[] = [baseScope];
 
   switch (p.view) {
     case 'mine':

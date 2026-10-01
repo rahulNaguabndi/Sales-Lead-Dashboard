@@ -13,7 +13,7 @@ export function LeadHeader({ detail, actions }: { detail: LeadDetail; actions?: 
   return (
     <header className="space-y-2 border-b border-border pb-4">
       <Link
-        href="/"
+        href="/inbox"
         className="inline-flex items-center text-xs text-muted-foreground hover:underline"
       >
         <ChevronLeft aria-hidden className="h-3 w-3" />

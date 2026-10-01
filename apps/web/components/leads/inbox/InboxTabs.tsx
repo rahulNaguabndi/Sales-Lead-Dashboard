@@ -9,7 +9,8 @@ export type TabCaps = { leader: boolean; orgWide: boolean };
 
 export function buildTabs(caps: TabCaps, counts: TabCounts): TabDef[] {
   const tabs: TabDef[] = [];
-  if (caps.leader) tabs.push({ view: 'team', label: caps.orgWide ? 'All' : 'Team' });
+  const teamLabel = caps.orgWide ? 'All' : 'Team';
+  tabs.push({ view: 'team', label: teamLabel });
   // Managers and VPs only get My Leads when they own at least one lead (open question, section 11).
   if (!caps.leader || counts.mine > 0) {
     tabs.push({ view: 'mine', label: 'My Leads', count: counts.mine });

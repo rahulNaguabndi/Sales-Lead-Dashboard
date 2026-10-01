@@ -4,25 +4,35 @@
 
 @layer base {
   :root {
-    --background: 222.2 84% 4.9%;
-    --foreground: 210 40% 98%;
-    --card: 222.2 84% 4.9%;
-    --card-foreground: 210 40% 98%;
-    --popover: 222.2 84% 4.9%;
-    --popover-foreground: 210 40% 98%;
-    --primary: 221.2 83.2% 53.3%;
-    --primary-foreground: 210 40% 98%;
-    --secondary: 217.2 32.6% 17.5%;
-    --secondary-foreground: 210 40% 98%;
-    --muted: 217.2 32.6% 17.5%;
-    --muted-foreground: 215 20.2% 65.1%;
-    --accent: 217.2 32.6% 17.5%;
-    --accent-foreground: 210 40% 98%;
-    --destructive: 0 62.8% 30.6%;
-    --destructive-foreground: 210 40% 98%;
-    --border: 217.2 32.6% 17.5%;
-    --input: 217.2 32.6% 17.5%;
-    --ring: 224.3 76.3% 48%;
+    /* Surfaces: background < card < muted/secondary < border (each step is visibly lighter). */
+    --background: 222 33% 7%;
+    --foreground: 220 30% 96%;
+    --card: 222 28% 10%;
+    --card-foreground: 220 30% 96%;
+    --popover: 222 28% 11%;
+    --popover-foreground: 220 30% 96%;
+    --secondary: 222 22% 15%;
+    --secondary-foreground: 220 30% 96%;
+    --muted: 222 22% 15%;
+    --muted-foreground: 220 17% 68%;
+    --accent: 222 22% 17%;
+    --accent-foreground: 220 30% 96%;
+    --border: 222 20% 20%;
+    --input: 222 20% 22%;
+
+    /* Brand: one accent, used for primary actions, active tab and focus. */
+    --primary: 214 82% 48%;
+    --primary-foreground: 0 0% 100%;
+    --ring: 213 92% 62%;
+
+    /* Status: use these (not raw red/amber/green) for any state colour. */
+    --destructive: 0 72% 48%;
+    --destructive-foreground: 0 0% 100%;
+    --danger: 0 84% 66%;
+    --warning: 38 95% 58%;
+    --success: 152 62% 48%;
+    --info: 199 90% 62%;
+
     --radius: 0.5rem;
   }
 }
@@ -31,7 +41,25 @@
   * {
     @apply border-border;
   }
+  html {
+    color-scheme: dark; /* dark scrollbars and native form controls */
+  }
   body {
-    @apply bg-background text-foreground;
+    @apply bg-background text-foreground antialiased;
+    font-variant-numeric: tabular-nums;
+  }
+  /* One consistent, visible focus treatment for every keyboard user. */
+  :focus-visible {
+    outline: 2px solid hsl(var(--ring));
+    outline-offset: 2px;
+  }
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+    }
   }
 }

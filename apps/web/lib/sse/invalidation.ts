@@ -15,7 +15,7 @@ export function keysFor(e: LeadDeskEvent): QueryKey[] {
     case 'lead.updated':
       return [['lead', e.leadId], ['leads'], ['pipeline'], ['dashboard']];
     case 'activity.created':
-      return [['lead', e.leadId, 'activities']];
+      return [['lead', e.leadId, 'activities'], ['leads'], ['followups']];
     case 'followup.due':
       return [['followups']];
     case 'offer.changed':

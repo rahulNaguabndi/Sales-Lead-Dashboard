@@ -79,7 +79,7 @@ export function LeadRow({
         }
       }}
       className={cn(
-        'h-10 cursor-pointer border-b border-slate-800 hover:bg-slate-900 focus:bg-slate-900 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500',
+        'h-11 cursor-pointer border-b border-slate-800 transition-colors hover:bg-slate-800/60 focus:bg-slate-800/60 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary',
         highlighted && 'animate-pulse bg-blue-500/10',
       )}
     >
